@@ -563,7 +563,7 @@ async def commandPlayerStatus(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) != 2:
-		await postCommandHelpMessage(curMessage, "ownerhistory")
+		await postCommandHelpMessage(curMessage, "playerstatus")
 		return
 
 	curUsername = curMessageSplit[1]

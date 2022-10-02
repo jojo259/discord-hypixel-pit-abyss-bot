@@ -1078,6 +1078,76 @@ async def commandKingsQuestCalc(curMessage):
 
 	await curMessage.reply('', embed = replyEmbed)
 
+async def commandsTradeLimits(curMessage):
+	curMessageSplit = curMessage.content.lower().split()
+
+	curMessageSplitLen = len(curMessageSplit)
+
+	if curMessageSplitLen != 2:
+		await postCommandHelpMessage(curMessage, commandsTradeLimits)
+		return
+
+	targetIdentity = curMessageSplit[1]
+	targetUuid = getUuidFromUsername(targetIdentity)
+
+	apiUrl = f"https://api.hypixel.net/player?key={hypixelApiKey}&uuid={targetUuid}"
+	try:
+		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {apiUrl}')
+		await curMessage.reply("API failed or timed out.")
+		return
+
+	if not apiGot['success']:
+		await curMessage.reply("API failed, are you sure that player exists?")
+		return
+
+	playerUsername = getVal(apiGot, ['player', 'displayname'])
+
+	if playerUsername == None:
+		await curMessage.reply('No player data found.')
+		return
+
+	playerTrades = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'trade_timestamps'])
+
+	curTime = time.time()
+	playerTrades = list(filter(lambda x: x > (curTime - 86400) * 1000, playerTrades)) 
+
+	if playerTrades == None or len(playerTrades) == 0:
+		await curMessage.reply('No trade limits found. 0/25')
+		return
+
+	#playerGoldTransactions = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'gold_transactions'])
+	#if playerGoldTransactions != None and len(playerGoldTransactions) != 0:
+	#	playerGoldTransactions = list(filter(lambda x: x['timestamp'] > (curTime - 86400) * 1000, playerGoldTransactions)) 
+
+	# reply
+
+	#totalGoldLimitUsed = 0
+
+	embedStr = ""
+	embedStr += f"""`{str(len(playerTrades)) + '/25'}{' ' * (17 - len(str(len(playerTrades)) + '/25'))}` Now\n"""
+	for atTrade, curTradeTime in enumerate(playerTrades):
+
+		if len(embedStr) > 512:
+			break
+
+		tradeLimitsStr = f'{len(playerTrades) - atTrade - 1}/25'
+
+		#for curGoldTransaction in playerGoldTransactions:
+		#	if curGoldTransaction['timestamp'] == curTradeTime:
+		#		curGoldTransactionAmount = int(curGoldTransaction['amount'])
+		#		totalGoldLimitUsed += curGoldTransactionAmount
+		
+		#tradeLimitsStr += f'    {int((50000 - totalGoldLimitUsed) / 1000)}k/50k'
+
+		embedStr += f"""`{tradeLimitsStr}{' ' * (17 - len(tradeLimitsStr))}` <t:{int((curTradeTime / 1000) + 86400)}:R>\n"""
+
+	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
+	replyEmbed.add_field(name = f"Trade limits for {playerUsername}", value = embedStr)
+
+	await curMessage.reply('', embed = replyEmbed)
+
 # other
 
 async def indexKosPlayer(theBot):
@@ -1275,6 +1345,12 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Calculate level gain from King's Quest.
 	"""
 
+	helpMessages[commandsTradeLimits] = """
+	`.tr username`
+
+	View when your trades limits expire.
+	"""
+
 	helpMessages[commandHelp] = """
 	**.help**
 	Display available commands. Use `.help [command]` to view individual command usage.
@@ -1299,6 +1375,9 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 
 	**.kingsquest**
 	Calculate your new level after completing King's Quest.
+
+	**.tradelimits**
+	View when your trades limits expire.
 
 	**.itemsearch**
 	Search for a mystic using Pit Panda data.
@@ -1443,6 +1522,12 @@ commandsList["kingquest"] = commandKingsQuestCalc
 commandsList["kingsquest"] = commandKingsQuestCalc
 commandsList["kingquestcalc"] = commandKingsQuestCalc
 commandsList["kingsquestcalc"] = commandKingsQuestCalc
+
+commandsList["tr"] = commandsTradeLimits
+commandsList["trade"] = commandsTradeLimits
+commandsList["trades"] = commandsTradeLimits
+commandsList["tradelims"] = commandsTradeLimits
+commandsList["tradelimits"] = commandsTradeLimits
 
 reloadServerData()
 

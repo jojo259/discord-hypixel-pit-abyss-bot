@@ -431,9 +431,9 @@ async def commandHelp(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) == 2:
-		await postCommandHelpMessage(curMessage, curMessageSplit[1])
+		await postCommandHelpMessage(curMessage, getCommandFunc(curMessageSplit[1]))
 	else:
-		await postCommandHelpMessage(curMessage, "help")
+		await postCommandHelpMessage(curMessage, commandHelp)
 
 async def commandOwnerHistory(curMessage):
 	ownersPerPage = 16
@@ -441,7 +441,7 @@ async def commandOwnerHistory(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) < 2:
-		await postCommandHelpMessage(curMessage, "ownerhistory")
+		await postCommandHelpMessage(curMessage, commandOwnerHistory)
 		return
 
 	ownerUsername = curMessageSplit[1].lower()
@@ -563,7 +563,7 @@ async def commandPlayerStatus(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) != 2:
-		await postCommandHelpMessage(curMessage, "playerstatus")
+		await postCommandHelpMessage(curMessage, commandPlayerStatus)
 		return
 
 	curUsername = curMessageSplit[1]
@@ -634,7 +634,7 @@ async def commandKos(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) < 2:
-		await postCommandHelpMessage(curMessage, "kos")
+		await postCommandHelpMessage(curMessage, commandKos)
 		return
 
 	curMessageGuild = curMessage.guild
@@ -733,13 +733,13 @@ async def commandKos(curMessage):
 		await curMessage.reply('', embed = replyEmbed)
 		return
 
-	await postCommandHelpMessage(curMessage, "kos")
+	await postCommandHelpMessage(curMessage, commandKos)
 
-async def commandNameHistory(curMessage):
+async def commandNameHistory(curMessage): # broken, prob remove
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) != 2:
-		await postCommandHelpMessage(curMessage, "namehistory")
+		await postCommandHelpMessage(curMessage, commandNameHistory)
 		return
 
 	targetIdentity = curMessageSplit[1]
@@ -782,7 +782,7 @@ async def commandItemSearch(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) < 2:
-		await postCommandHelpMessage(curMessage, "itemsearch")
+		await postCommandHelpMessage(curMessage, commandItemSearch)
 		return
 
 	searchParams = []
@@ -832,7 +832,7 @@ async def commandBoatsSearch(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) < 2:
-		await postCommandHelpMessage(curMessage, "boatssearch")
+		await postCommandHelpMessage(curMessage, commandBoatsSearch)
 		return
 
 	ownerUsername = curMessageSplit[1].lower()
@@ -889,7 +889,7 @@ async def commandMutuals(curMessage):
 	curMessageSplitLen = len(curMessageSplit)
 
 	if curMessageSplitLen != 3:
-		await postCommandHelpMessage(curMessage, "mutuals")
+		await postCommandHelpMessage(curMessage, commandMutuals)
 		return
 
 	firstPlayerUuid = getUuidFromUsername(curMessageSplit[1])
@@ -962,7 +962,7 @@ async def commandScammerCheck(curMessage):
 	curMessageSplitLen = len(curMessageSplit)
 
 	if curMessageSplitLen != 2:
-		await postCommandHelpMessage(curMessage, "scammercheck")
+		await postCommandHelpMessage(curMessage, commandScammerCheck)
 
 	targetIdentity = curMessageSplit[1]
 
@@ -1111,8 +1111,13 @@ async def indexKosPlayer(theBot):
 	else:
 		pass # finished minute's worth of indexing
 
-async def postCommandHelpMessage(curMessage, commandName):
-	if commandName not in commandsList:
+def getCommandFunc(commandStr):
+	if commandStr in commandsList:
+		return commandsList[commandStr]
+	return None
+
+async def postCommandHelpMessage(curMessage, helpCommandFunc):
+	if helpCommandFunc == None:
 		await curMessage.reply("Command not found, type `.help`")
 		return
 
@@ -1240,7 +1245,6 @@ async def postCommandHelpMessage(curMessage, commandName):
 	**Code at https://github.com/jojo259/discord-hypixel-pit-abyss-bot**
 	"""
 
-	helpCommandFunc = commandsList[commandName]
 	helpStr = helpMessages[helpCommandFunc]
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
@@ -1277,7 +1281,10 @@ class botClass(discord.Client):
 		if curAuthor == theBot.user:
 			return
 
-		if debugMode and curMessage.guild.id != 868085773092651050:
+		if debugMode and curMessage.channel.id != 1010870694650847272: # debug bot only enabled inside test channel
+			return
+
+		if not debugMode and curMessage.channel.id == 1010870694650847272: # production bot disabled inside test channel
 			return
 
 		curMessageContent = curMessage.content
@@ -1297,14 +1304,12 @@ class botClass(discord.Client):
 				print(logStr)
 				sendDiscord(logStr)
 
-			curMessageCommandFunc = None
-			if curMessageCommand in commandsList:
-				curMessageCommandFunc = commandsList[curMessageCommand]
+			curMessageCommandFunc = getCommandFunc(curMessageCommand)
 
 			noParamCommands = [commandEvents]
 
 			if len(curMessageSplit) == 1 and curMessageCommandFunc not in noParamCommands:
-				await postCommandHelpMessage(curMessage, curMessageCommand)
+				await postCommandHelpMessage(curMessage, curMessageCommandFunc)
 				return
 
 			async with curMessage.channel.typing():

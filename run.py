@@ -1,5 +1,3 @@
-debugMode = False
-
 print("init")
 
 import discord
@@ -13,13 +11,15 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+debugMode = False
+if 'debugmode' in os.environ:
+	debugMode = True
+
 alertStr = "PRODUCTION MODE"
 if debugMode:
 	alertStr = "DEBUG MODE"
 for i in range(8):
 	print(alertStr)
-
-print('connecting')
 
 print('connecting')
 import pymongo
@@ -873,11 +873,7 @@ async def commandBoatsSearch(curMessage):
 		return
 
 	itemsStr = f"Items: (page {atPage + 1}/{totalPages})"
-	''' api doesnt count fast enough
-	if 'count' in searchApiGot:
-		if searchApiGot['count'] >= 0:
-			itemsStr += f"""({searchApiGot["count"]} items found)"""
-	'''
+
 	for curItem in itemsListSlice:
 		itemsStr += f"\n{itemStr(curItem)}"
 
@@ -963,6 +959,7 @@ async def commandScammerCheck(curMessage):
 
 	if curMessageSplitLen != 2:
 		await postCommandHelpMessage(curMessage, commandScammerCheck)
+		return
 
 	targetIdentity = curMessageSplit[1]
 
@@ -1015,6 +1012,69 @@ async def commandEvents(curMessage):
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = "Events", value = embedStr[:1024])
+
+	await curMessage.reply('', embed = replyEmbed)
+
+async def commandKingsQuestCalc(curMessage):
+	curMessageSplit = curMessage.content.lower().split()
+
+	curMessageSplitLen = len(curMessageSplit)
+
+	if curMessageSplitLen != 2:
+		await postCommandHelpMessage(curMessage, commandKingsQuestCalc)
+		return
+
+	targetIdentity = curMessageSplit[1]
+
+	apiUrl = f"https://pitpanda.rocks/api/players/{targetIdentity}?key={pitPandaApiKey}"
+	try:
+		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {apiUrl}')
+		await curMessage.reply("API failed or timed out.")
+		return
+
+	if not apiGot['success']:
+		await curMessage.reply("API failed, are you sure that player exists?")
+		return
+
+	playerUsername = getVal(apiGot, ['data', 'name'])
+
+	playerTotalXp = getVal(apiGot, ['data', 'doc', 'xp'])
+
+	# calculate current prestige
+
+	prestigeSumXps = [0, 65950, 138510, 217680, 303430, 395760, 494700, 610140, 742040, 906930, 1104780, 1368580, 1698330, 2094030, 2555680, 3083280, 3676830, 4336330, 5127730, 6051030, 7106230, 8293330, 9612330, 11195130, 13041730, 15152130, 17526330, 20164330, 23132080, 26429580, 31375830, 37970830, 44631780, 51292730, 57953680, 64614630, 71275580, 84465580, 104250580, 130630580, 163605580, 213068080, 279018080, 361455580, 460380580, 575793080, 707693080, 905543080, 1235293080, 1894793080, 5192293080, 11787293080]
+
+	levelMultipliers = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 45, 50, 75, 100, 101, 101, 101, 101, 101, 200, 300, 400, 500, 750, 1000, 1250, 1500, 1750, 2000, 3000, 5000, 10000, 50000, 100000]
+	levelBaseXps = [15, 30, 50, 75, 125, 300, 600, 800, 900, 1000, 1200, 1500]
+
+	playerPrestige = 0
+
+	for atPrestige, curXp in enumerate(reversed(prestigeSumXps)):
+		if playerTotalXp > curXp:
+			playerPrestige = len(prestigeSumXps) - atPrestige - 1
+			break
+
+	playerTotalXp -= prestigeSumXps[playerPrestige]
+
+	# add extra for king's quest
+
+	playerTotalXp += (prestigeSumXps[playerPrestige + 1] - prestigeSumXps[playerPrestige]) / 3
+
+	# calculate new level
+
+	playerLevel = 0
+	while playerTotalXp > 0 and playerLevel < 120:
+		playerTotalXp -= levelBaseXps[math.floor(playerLevel / 10)] * levelMultipliers[playerPrestige]
+		playerLevel += 1
+
+	# reply
+
+	embedStr = f"King's Quest would bring {playerUsername} to p{playerPrestige} lvl{playerLevel}"
+
+	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
+	replyEmbed.add_field(name = "King's Quest", value = embedStr)
 
 	await curMessage.reply('', embed = replyEmbed)
 
@@ -1209,6 +1269,12 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Check if a player is tagged as a scammer using data from Pit Panda.
 	"""
 
+	helpMessages[commandKingsQuestCalc] = """
+	`.kq username`
+
+	Calculate level gain from King's Quest.
+	"""
+
 	helpMessages[commandHelp] = """
 	**.help**
 	Display available commands. Use `.help [command]` to view individual command usage.
@@ -1231,8 +1297,8 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	**.mutuals**
 	Show mutual Hypixel friends of two players.
 
-	**.scammercheck**
-	Check if a player is scammer tagged by Pit Panda.
+	**.kingsquest**
+	Calculate your new level after completing King's Quest.
 
 	**.itemsearch**
 	Search for a mystic using Pit Panda data.
@@ -1240,9 +1306,8 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	**.boatssearch**
 	Search for any item (*any*) using jojo.boats data. Includes regs, darks, etc.
 
-
-	**Add me to your server by clicking my profile and then "Add to Server".**
 	**Code at https://github.com/jojo259/discord-hypixel-pit-abyss-bot**
+	**Add me to your server by clicking my profile and then "Add to Server".**
 	"""
 
 	helpStr = helpMessages[helpCommandFunc]
@@ -1368,6 +1433,16 @@ commandsList["checksscammer"] = commandScammerCheck
 
 commandsList["ev"] = commandEvents
 commandsList["events"] = commandEvents
+
+commandsList["kc"] = commandKingsQuestCalc
+commandsList["kq"] = commandKingsQuestCalc
+commandsList["kqc"] = commandKingsQuestCalc
+commandsList["kingcalc"] = commandKingsQuestCalc
+commandsList["kingscalc"] = commandKingsQuestCalc
+commandsList["kingquest"] = commandKingsQuestCalc
+commandsList["kingsquest"] = commandKingsQuestCalc
+commandsList["kingquestcalc"] = commandKingsQuestCalc
+commandsList["kingsquestcalc"] = commandKingsQuestCalc
 
 reloadServerData()
 

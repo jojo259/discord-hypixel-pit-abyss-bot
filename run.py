@@ -1148,6 +1148,120 @@ async def commandsTradeLimits(curMessage):
 
 	await curMessage.reply('', embed = replyEmbed)
 
+async def commandsDupeCheck(curMessage):
+	curMessageSplit = curMessage.content.lower().split()
+
+	if len(curMessageSplit) < 2:
+		await postCommandHelpMessage(curMessage, commandOwnerHistory)
+		return
+
+	ownerUsername = curMessageSplit[1].lower()
+	ownerUsername = getUsernameFromUuid(ownerUsername)
+	ownerUsername = getUuidFromUsername(ownerUsername)
+	if ownerUsername == 'unknown':
+		await curMessage.reply("API failed, are you sure that player exists?")
+		return
+
+	searchParams = []
+
+	atPage = None
+
+	searchParams, atPage = getUrlParams(curMessageSplit[2:], True)
+
+	searchParams.append(f"uuid{ownerUsername}")
+
+	urlParamsStr = ",".join(searchParams)
+
+	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
+	try:
+		searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {searchApiUrl}')
+		await curMessage.reply("API failed or timed out.")
+		return
+
+	searchItemsList = searchApiGot["items"]
+	searchItemsListLen = len(searchItemsList)
+
+	if searchItemsListLen == 0:
+		print('		couldnt find, searching past owners too')
+
+		searchParams.remove(f"uuid{ownerUsername}")
+		searchParams.append(f"past{ownerUsername}")
+
+		urlParamsStr = ",".join(searchParams)
+
+		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
+		try:
+			searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 1)
+		except:
+			print(f'	failed to get api {searchApiUrl}')
+			await curMessage.reply("API failed or timed out.")
+			return
+
+		searchItemsList = searchApiGot["items"]
+		searchItemsListLen = len(searchItemsList)
+
+	if searchItemsListLen == 0:
+		await curMessage.reply("No items found.")
+		return
+	elif searchItemsListLen > 1:
+		replyStr = "Too many items found, be more specific."
+
+		for atItem, curItem in enumerate(searchItemsList):
+			replyStr += f"\n{itemStr(curItem)}"
+
+			if atItem > 10:
+				replyStr += "\nMore..."
+				break
+
+		await curMessage.reply(replyStr[:2000])
+		return
+	elif searchItemsListLen != 1: # should never trigger due to above conditions
+		return
+
+	foundItem = searchItemsList[0]
+	foundItemNonce = foundItem["nonce"]
+
+	# check panda
+
+	pandaNonceApiUrl = f"https://pitpanda.rocks/api/itemsearch/nonce{foundItemNonce}?key={pitPandaApiKey}"
+	try:
+		pandaNonceApiGot = requestsGet(pandaNonceApiUrl, timeout = 10, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {pandaNonceApiUrl}')
+		await curMessage.reply("API failed or timed out.")
+		return
+
+	pandaNonceItemsList = pandaNonceApiGot["items"]
+	pandaNonceItemsListLen = len(pandaNonceItemsList)
+
+	# check jojo.boats
+
+	boatsNonceApiUrl = f"http://www.jojo.boats/api/items/nonce={foundItemNonce}"
+	try:
+		boatsNonceApiGot = requestsGet(boatsNonceApiUrl, timeout = 10, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {boatsNonceApiUrl}')
+		await curMessage.reply("API failed or timed out.")
+		return
+
+	boatsNonceItemsList = boatsNonceApiGot["items"]
+	boatsNonceItemsListLen = len(boatsNonceItemsList)
+
+	# reply
+
+	embedStr = f"""
+	Item's nonce is {foundItemNonce}
+	`Panda has:         {pandaNonceItemsListLen}`
+	`Jojo Boats has:    {boatsNonceItemsListLen}`
+	"""
+
+	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
+	replyEmbed.add_field(name = f"Dupe check", value = embedStr)
+
+	await curMessage.reply(itemStr(foundItem) + "\nInfo: Neither of these numbers is guaranteed to be 100% accurate.\nTo see the items that were found search with `.is nonce <nonce>` and `.bs nonce <nonce>`", embed = replyEmbed)
+
 # other
 
 async def indexKosPlayer(theBot):
@@ -1327,6 +1441,16 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	`.bs name tinykloonfish`
 	"""
 
+	helpMessages[commandsDupeCheck] = """
+	`.oh username ench1 [ench2] [ench3] [lives X] [page X]`
+	Check if an item appears to be duped using data from Pit Panda and Jojo Boats.
+
+	`lives` means maximum lives, not current lives.
+
+	For example:
+	`.dc jojoq booboo moc3 lives 100`
+	"""
+
 	helpMessages[commandMutuals] = """
 	`.mutuals player1 player2`
 
@@ -1384,6 +1508,9 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 
 	**.boatssearch**
 	Search for any item (*any*) using jojo.boats data. Includes regs, darks, etc.
+
+	**.dupecheck**
+	Check if an item appears to be duped.
 
 	**Code at https://github.com/jojo259/discord-hypixel-pit-abyss-bot**
 	**Add me to your server by clicking my profile and then "Add to Server".**
@@ -1528,6 +1655,12 @@ commandsList["trade"] = commandsTradeLimits
 commandsList["trades"] = commandsTradeLimits
 commandsList["tradelims"] = commandsTradeLimits
 commandsList["tradelimits"] = commandsTradeLimits
+
+commandsList["dc"] = commandsDupeCheck
+commandsList["dupe"] = commandsDupeCheck
+commandsList["duped"] = commandsDupeCheck
+commandsList["checkdupe"] = commandsDupeCheck
+commandsList["dupecheck"] = commandsDupeCheck
 
 reloadServerData()
 

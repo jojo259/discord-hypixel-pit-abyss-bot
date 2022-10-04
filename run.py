@@ -1442,7 +1442,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	"""
 
 	helpMessages[commandsDupeCheck] = """
-	`.oh username ench1 [ench2] [ench3] [lives X] [page X]`
+	`.dc username ench1 [ench2] [ench3] [lives X] [page X]`
 	Check if an item appears to be duped using data from Pit Panda and Jojo Boats.
 
 	`lives` means maximum lives, not current lives.

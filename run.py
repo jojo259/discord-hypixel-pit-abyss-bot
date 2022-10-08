@@ -55,7 +55,7 @@ print('set kos data')
 # util
 
 cachedRequests = {}
-def requestsGet(apiUrl, timeout = 10, cacheMinutes = 0):
+def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 	curTime = time.time()
 
 	print(f"	getting {apiUrl}")
@@ -237,7 +237,7 @@ def getUsernameFromUuid(curUuid):
 
 	apiUrl = f"https://sessionserver.mojang.com/session/minecraft/profile/{curUuid}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1440)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1440)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"
@@ -260,7 +260,7 @@ def getUuidFromUsername(curUsername):
 
 	apiUrl = f"https://api.mojang.com/users/profiles/minecraft/{curUsername}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1440)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1440)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"
@@ -463,7 +463,7 @@ async def commandOwnerHistory(curMessage):
 
 	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
 	try:
-		searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 1)
+		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {searchApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -482,7 +482,7 @@ async def commandOwnerHistory(curMessage):
 
 		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
 		try:
-			searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 1)
+			searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 		except:
 			print(f'	failed to get api {searchApiUrl}')
 			await curMessage.reply("API failed or timed out.")
@@ -514,7 +514,7 @@ async def commandOwnerHistory(curMessage):
 
 	idApiUrl = f"https://pitpanda.rocks/api/item/{foundItemId}?key={pitPandaApiKey}"
 	try:
-		idApiGot = requestsGet(idApiUrl, timeout = 10, cacheMinutes = 1)
+		idApiGot = requestsGet(idApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {idApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -570,7 +570,7 @@ async def commandPlayerStatus(curMessage):
 
 	apiUrl = f"https://pitpanda.rocks/api/players/{curUsername}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 0)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 0)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -751,7 +751,7 @@ async def commandNameHistory(curMessage): # broken, prob remove
 
 	apiUrl = f"https://api.mojang.com/user/profiles/{targetIdentity}/names"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1440)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1440)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -795,7 +795,7 @@ async def commandItemSearch(curMessage):
 
 	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
 	try:
-		searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 60)
+		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 60)
 	except:
 		print(f'	failed to get api {searchApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -847,7 +847,7 @@ async def commandBoatsSearch(curMessage):
 
 	searchApiUrl = f"https://jojo-boats.herokuapp.com/api/items/{urlParamsStr}"
 	try:
-		searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 60)
+		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 60)
 	except:
 		print(f'	failed to get api {searchApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -893,7 +893,7 @@ async def commandMutuals(curMessage):
 
 	firstApiUrl = f"https://pitpanda.rocks/api/friends/{firstPlayerUuid}?key={pitPandaApiKey}"
 	try:
-		firstApiGot = requestsGet(firstApiUrl, timeout = 10, cacheMinutes = 60)
+		firstApiGot = requestsGet(firstApiUrl, cacheMinutes = 60)
 	except:
 		print(f'	failed to get api {firstApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -905,7 +905,7 @@ async def commandMutuals(curMessage):
 
 	secondApiUrl = f"https://pitpanda.rocks/api/friends/{secondPlayerUuid}?key={pitPandaApiKey}"
 	try:
-		secondApiGot = requestsGet(secondApiUrl, timeout = 10, cacheMinutes = 60)
+		secondApiGot = requestsGet(secondApiUrl, cacheMinutes = 60)
 	except:
 		print(f'	failed to get api {secondApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -965,7 +965,7 @@ async def commandScammerCheck(curMessage):
 
 	apiUrl = f"https://pitpanda.rocks/api/players/{targetIdentity}?key={pitPandaApiKey}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -997,7 +997,7 @@ async def commandScammerCheck(curMessage):
 async def commandEvents(curMessage):
 	apiUrl = "https://events.mcpqndq.dev/"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 0)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 0)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return
@@ -1028,7 +1028,7 @@ async def commandKingsQuestCalc(curMessage):
 
 	apiUrl = f"https://pitpanda.rocks/api/players/{targetIdentity}?key={pitPandaApiKey}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -1092,7 +1092,7 @@ async def commandsTradeLimits(curMessage):
 
 	apiUrl = f"https://api.hypixel.net/player?key={hypixelApiKey}&uuid={targetUuid}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 1)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -1174,7 +1174,7 @@ async def commandsDupeCheck(curMessage):
 
 	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
 	try:
-		searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 1)
+		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {searchApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -1193,7 +1193,7 @@ async def commandsDupeCheck(curMessage):
 
 		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
 		try:
-			searchApiGot = requestsGet(searchApiUrl, timeout = 10, cacheMinutes = 1)
+			searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 		except:
 			print(f'	failed to get api {searchApiUrl}')
 			await curMessage.reply("API failed or timed out.")
@@ -1227,7 +1227,7 @@ async def commandsDupeCheck(curMessage):
 
 	pandaNonceApiUrl = f"https://pitpanda.rocks/api/itemsearch/nonce{foundItemNonce}?key={pitPandaApiKey}"
 	try:
-		pandaNonceApiGot = requestsGet(pandaNonceApiUrl, timeout = 10, cacheMinutes = 1)
+		pandaNonceApiGot = requestsGet(pandaNonceApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {pandaNonceApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -1240,7 +1240,7 @@ async def commandsDupeCheck(curMessage):
 
 	boatsNonceApiUrl = f"http://www.jojo.boats/api/items/nonce={foundItemNonce}"
 	try:
-		boatsNonceApiGot = requestsGet(boatsNonceApiUrl, timeout = 10, cacheMinutes = 1)
+		boatsNonceApiGot = requestsGet(boatsNonceApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {boatsNonceApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -1282,7 +1282,7 @@ async def indexKosPlayer(theBot):
 
 		apiUrl = f"https://api.hypixel.net/player?key={hypixelApiKey}&uuid={kosUuid}"
 		try:
-			apiGot = requestsGet(apiUrl, timeout = 10, cacheMinutes = 0)
+			apiGot = requestsGet(apiUrl, cacheMinutes = 0)
 		except:
 			print(f'	failed to get api {apiUrl}')
 			return

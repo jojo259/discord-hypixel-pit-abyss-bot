@@ -26,15 +26,14 @@ import pymongo
 mongoConnectString = os.environ['mongoconnectstring']
 dbClient = pymongo.MongoClient(mongoConnectString)
 curDb = dbClient['hypixel']
-serversCol = curDb['servers']
+serversCol = curDb['servers'] # KOS functionality deprecated
+discordsCol = curDb['discords']
 print('connected')
 
-# sensitive data
 botToken = os.environ['bottoken']
 pitPandaApiKey = os.environ['pitpandaapikey']
 webHookUrl = os.environ['webhookurl']
 hypixelApiKey = os.environ['hypixelapikey']
-# sensitive data
 
 print('getting ench names')
 
@@ -237,7 +236,7 @@ def getUsernameFromUuid(curUuid):
 
 	apiUrl = f"https://sessionserver.mojang.com/session/minecraft/profile/{curUuid}"
 	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 1440)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"
@@ -260,7 +259,7 @@ def getUuidFromUsername(curUsername):
 
 	apiUrl = f"https://api.mojang.com/users/profiles/minecraft/{curUsername}"
 	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 1440)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"
@@ -570,7 +569,7 @@ async def commandPlayerStatus(curMessage):
 
 	apiUrl = f"https://pitpanda.rocks/api/players/{curUsername}"
 	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 0)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -795,7 +794,7 @@ async def commandItemSearch(curMessage):
 
 	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
 	try:
-		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 60)
+		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {searchApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -847,7 +846,7 @@ async def commandBoatsSearch(curMessage):
 
 	searchApiUrl = f"https://jojo-boats.herokuapp.com/api/items/{urlParamsStr}"
 	try:
-		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 60)
+		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {searchApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -893,7 +892,7 @@ async def commandMutuals(curMessage):
 
 	firstApiUrl = f"https://pitpanda.rocks/api/friends/{firstPlayerUuid}?key={pitPandaApiKey}"
 	try:
-		firstApiGot = requestsGet(firstApiUrl, cacheMinutes = 60)
+		firstApiGot = requestsGet(firstApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {firstApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -905,7 +904,7 @@ async def commandMutuals(curMessage):
 
 	secondApiUrl = f"https://pitpanda.rocks/api/friends/{secondPlayerUuid}?key={pitPandaApiKey}"
 	try:
-		secondApiGot = requestsGet(secondApiUrl, cacheMinutes = 60)
+		secondApiGot = requestsGet(secondApiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {secondApiUrl}')
 		await curMessage.reply("API failed or timed out.")
@@ -997,7 +996,7 @@ async def commandScammerCheck(curMessage):
 async def commandEvents(curMessage):
 	apiUrl = "https://events.mcpqndq.dev/"
 	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 0)
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return
@@ -1260,7 +1259,93 @@ async def commandsDupeCheck(curMessage):
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Dupe check", value = embedStr)
 
-	await curMessage.reply(itemStr(foundItem) + "\nInfo: Neither of these numbers is guaranteed to be 100% accurate.\nTo see the items that were found search with `.is nonce <nonce>` and `.bs nonce <nonce>`", embed = replyEmbed)
+	await curMessage.reply(itemStr(foundItem) + "\nNeither of these numbers is guaranteed to be accurate.\nTo see the items that were found search with `.is nonce <nonce>` and `.bs nonce <nonce>`", embed = replyEmbed)
+
+async def commandVerify(curMessage):
+
+	userDoc = discordsCol.find_one({'_id': curMessage.author.id})
+
+	if userDoc != None:
+
+		userDocIdentifier = 'null'
+
+		if 'uuid' in userDoc:
+			userDocUsername = userDoc['uuid']
+
+		if 'username' in userDoc:
+			userDocUsername = userDoc['username']
+
+		await curMessage.reply(f'Already verified as `{userDocUsername}`, use `.unverify` to remove this verification.')
+
+		return
+
+	curMessageSplit = curMessage.content.lower().split()
+
+	if len(curMessageSplit) != 2:
+		await postCommandHelpMessage(curMessage, commandVerify)
+		return
+
+	playerUsername = curMessageSplit[1]
+
+	playerApiUrl = f"https://pitpanda.rocks/api/players/{playerUsername}?key={pitPandaApiKey}"
+	try:
+		playerApiGot = requestsGet(playerApiUrl, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {playerApiUrl}')
+		await curMessage.reply("API failed or timed out.")
+		return
+
+	if 'success' in playerApiGot:
+		if playerApiGot['success'] != True:
+			await curMessage.reply("Player doesn't exist.")
+			return
+
+	apiDiscord = getVal(playerApiGot, ['data', 'doc', 'discord'])
+
+	messageDiscord = curMessage.author.name + '#' + curMessage.author.discriminator
+
+	if apiDiscord != messageDiscord:
+		await curMessage.reply("Hypixel Discord doesn't match your Discord.")
+		return
+
+	# get uuid
+
+	if 'data' not in playerApiGot:
+		await curMessage.reply("Data error.")
+		return
+
+	if 'uuid' not in playerApiGot['data']:
+		await curMessage.reply("Data error.")
+		return
+
+	playerUuid = playerApiGot['data']['uuid']
+
+	# get username
+
+	if 'data' not in playerApiGot:
+		await curMessage.reply("Data error.")
+		return
+
+	if 'name' not in playerApiGot['data']:
+		await curMessage.reply("Data error.")
+		return
+
+	playerUsername = playerApiGot['data']['name']
+
+	discordsCol.insert_one({'_id': curMessage.author.id, 'uuid': playerUuid, 'username': playerUsername})
+	await curMessage.reply(f"Successfully verified as `{playerUsername}`.")
+
+async def commandUnverify(curMessage):
+
+	userDoc = discordsCol.find_one({'_id': curMessage.author.id})
+
+	if userDoc == None:
+
+		await curMessage.reply(f'No verification found.')
+		return
+
+	discordsCol.delete_one({'_id': curMessage.author.id})
+	await curMessage.reply(f"Successfully unverified.")
 
 # other
 
@@ -1475,6 +1560,16 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	View when your trades limits expire.
 	"""
 
+	helpMessages[commandVerify] = """
+	`.verify`
+	Verify to link your Discord account with Hypixel.
+	"""
+
+	helpMessages[commandUnverify] = """
+	`.unverify`
+	Remove your current Discord-Hypixel link.
+	"""
+
 	helpMessages[commandHelp] = """
 	**.help**
 	Display available commands. Use `.help [command]` to view individual command usage.
@@ -1505,6 +1600,12 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 
 	**.itemsearch**
 	Search for a mystic using Pit Panda data.
+
+	**.verify**
+	Verify to link your Discord account with your Hypixel account.
+
+	**.unverify**
+	Remove your current Discord-Hypixel link.
 
 	**.boatssearch**
 	Search for any item (*any*) using jojo.boats data. Includes regs, darks, etc.
@@ -1576,12 +1677,6 @@ class botClass(discord.Client):
 				sendDiscord(logStr)
 
 			curMessageCommandFunc = getCommandFunc(curMessageCommand)
-
-			noParamCommands = [commandEvents]
-
-			if len(curMessageSplit) == 1 and curMessageCommandFunc not in noParamCommands:
-				await postCommandHelpMessage(curMessage, curMessageCommandFunc)
-				return
 
 			async with curMessage.channel.typing():
 				await commandsList[curMessageCommand](curMessage)
@@ -1661,6 +1756,12 @@ commandsList["dupe"] = commandsDupeCheck
 commandsList["duped"] = commandsDupeCheck
 commandsList["checkdupe"] = commandsDupeCheck
 commandsList["dupecheck"] = commandsDupeCheck
+
+commandsList["ve"] = commandVerify
+commandsList["verify"] = commandVerify
+
+commandsList["un"] = commandUnverify
+commandsList["unverify"] = commandUnverify
 
 reloadServerData()
 

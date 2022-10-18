@@ -28,6 +28,7 @@ dbClient = pymongo.MongoClient(mongoConnectString)
 curDb = dbClient['hypixel']
 serversCol = curDb['servers'] # KOS functionality deprecated
 discordsCol = curDb['discords']
+discordsCol = curDb['pitdiscords']
 print('connected')
 
 botToken = os.environ['bottoken']

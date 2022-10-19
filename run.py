@@ -1382,15 +1382,15 @@ async def commandLeaderboards(curMessage):
 
 	# sort guild values and put into totals
 
+	topPlayersCount = 16
+
 	guildTotals = {}
 
 	for curGuildId, curGuildVals in guildVals.items():
 
 		curGuildVals.sort(reverse = True)
 
-		print(guildVals[curGuildId][:16])
-
-		guildTotals[curGuildId] = sum(guildVals[curGuildId][:16])
+		guildTotals[curGuildId] = sum(guildVals[curGuildId][:topPlayersCount])
 
 	guildTotals = list(guildTotals.items())
 
@@ -1398,11 +1398,11 @@ async def commandLeaderboards(curMessage):
 
 	lbString = ''
 
-	for curGuildId, curGuildTotal in guildTotals[:16]:
+	for atGuild, (curGuildId, curGuildTotal) in enumerate(guildTotals[:16]):
 
 		curGuildName = await getGuildName(curGuildId)
 
-		lbString += f"""`{curGuildName[:32]}{' ' * (32 - len(curGuildName))}` `{prettyNumber(curGuildTotal)}`\n"""
+		lbString += f"""`{str(atGuild + 1)[:3]}{' ' * (3 - len(str(atGuild + 1)))}` `{curGuildName[:32]}{' ' * (32 - len(curGuildName))}` `{prettyNumber(curGuildTotal)}`\n"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Leaderboard - {curLbType}", value = lbString[:1024])

@@ -59,6 +59,9 @@ leaderboardTypes['pitpandaclout'] = ['doc', 'searches']
 leaderboardTypes['sewertreasures'] = ['doc', 'sewerTreasures']
 leaderboardTypes['nightquests'] = ['doc', 'nightQuests']
 leaderboardTypes['kingsquests'] = ['doc', 'kingsQuests']
+leaderboardTypes['xp'] = ['doc', 'xp']
+leaderboardTypes['contracts'] = ['doc', 'contracts']
+leaderboardTypes['deaths'] = ['doc', 'deaths']
 
 # util
 
@@ -968,51 +971,6 @@ async def commandMutuals(curMessage):
 
 	await curMessage.reply('', embed = replyEmbed)
 
-async def commandScammerCheck(curMessage):
-	await curMessage.reply(f"temporarily disabled\ncheck at https://pitpanda.rocks/players/{curMessage.content.lower().split()[1]}")
-	return
-
-	curMessageSplit = curMessage.content.lower().split()
-
-	curMessageSplitLen = len(curMessageSplit)
-
-	if curMessageSplitLen != 2:
-		await postCommandHelpMessage(curMessage, commandScammerCheck)
-		return
-
-	targetIdentity = curMessageSplit[1]
-
-	apiUrl = f"https://pitpanda.rocks/api/players/{targetIdentity}?key={pitPandaApiKey}"
-	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
-	except:
-		print(f'	failed to get api {apiUrl}')
-		await curMessage.reply("API failed or timed out.")
-		return
-
-	if not apiGot['success']:
-		await curMessage.reply("API failed, are you sure that player exists?")
-		return
-
-	targetUuid = getVal(apiGot, ['data', 'uuid'])
-
-	tagType = getVal(apiGot, ['data', 'doc', 'flag', 'type'])
-	if tagType != "scammer":
-		replyEmbed = discord.Embed(title = "", color = discord.Color.red())
-		replyEmbed.add_field(name = f"Not scammer", value = "Not tagged as scammer.")
-		replyEmbed.set_thumbnail(url = f"https://crafatar.com/avatars/{targetUuid}")
-
-		await curMessage.reply('', embed = replyEmbed)
-		return
-
-	scammerNotes = getVal(apiGot, ['data', 'doc', 'flag', 'notes'])
-
-	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
-	replyEmbed.add_field(name = "SCAMMER", value = f"Notes: {scammerNotes}")
-	replyEmbed.set_thumbnail(url = f"https://crafatar.com/avatars/{targetUuid}")
-
-	await curMessage.reply('', embed = replyEmbed)
-
 async def commandEvents(curMessage):
 	apiUrl = "https://events.mcpqndq.dev/"
 	try:
@@ -1615,12 +1573,6 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Finds mutual Hypixel friends of two players.
 	"""
 
-	helpMessages[commandScammerCheck] = """
-	`.sc username`
-
-	Check if a player is tagged as a scammer using data from Pit Panda.
-	"""
-
 	helpMessages[commandKingsQuestCalc] = """
 	`.kq username`
 
@@ -1865,13 +1817,6 @@ commandsList["mu"] = commandMutuals
 commandsList["moots"] = commandMutuals
 commandsList["mutual"] = commandMutuals
 commandsList["mutuals"] = commandMutuals
-
-commandsList["sc"] = commandScammerCheck
-commandsList["scam"] = commandScammerCheck
-commandsList["scammer"] = commandScammerCheck
-commandsList["scammercheck"] = commandScammerCheck
-commandsList["checkscammer"] = commandScammerCheck
-commandsList["checksscammer"] = commandScammerCheck
 
 commandsList["ev"] = commandEvents
 commandsList["events"] = commandEvents

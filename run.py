@@ -27,7 +27,6 @@ import pymongo
 mongoConnectString = os.environ['mongoconnectstring']
 dbClient = pymongo.MongoClient(mongoConnectString)
 curDb = dbClient['hypixel']
-serversCol = curDb['servers'] # KOS functionality deprecated
 discordsCol = curDb['pitdiscords']
 print('connected')
 
@@ -46,10 +45,6 @@ with open("enchnames.txt") as enchNamesFile:
 		enchNames[curLineSplit[0]] = curLineSplit[1]
 
 playerData = {}
-
-serverData = {}
-
-kosData = {'atUuid': 0, 'finishedIndexingMinute': 0, 'uuidsDict': {}}
 
 leaderboardTypes = {}
 leaderboardTypes['gold'] = ['currentGold']
@@ -123,47 +118,6 @@ def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 		cachedRequests[apiUrl] = {"time": curTime, "data": apiGot}
 
 	return apiGot
-
-def reloadServerData():
-	print('reloading server data')
-
-	kosData["uuidsDict"] = {}
-	kosData["atUuid"] = 0
-	
-	for curData in serversCol.find():
-		serverId = curData["_id"]
-
-		serverData[serverId] = curData
-
-		for curUuid in curData['koslist']:
-			if curUuid not in kosData["uuidsDict"]:
-				kosData["uuidsDict"][curUuid] = []
-
-			kosData['uuidsDict'][curUuid].append(serverId)
-
-	uuidsDictLen = len(kosData['uuidsDict'])
-	print(f'tracking {uuidsDictLen} uuids for kos')
-
-def getServerData(serverId):
-	serverDoc = None
-	if serverId in serverData:
-		serverDoc = serverData[serverId]
-
-	if serverDoc == None:
-		serverDoc = {}
-
-	if "_id" not in serverDoc:
-		serverDoc["_id"] = serverId
-
-	if "koslist" not in serverDoc:
-		serverDoc["koslist"] = []
-
-	return serverDoc
-
-def saveServerData(serverDoc):
-	serversCol.replace_one({"_id":serverDoc["_id"]}, serverDoc, upsert = True)
-
-	reloadServerData()
 
 def getVal(theDict, thePath):
 	try:
@@ -672,110 +626,8 @@ async def commandPlayerStatus(curMessage):
 	await curMessage.reply('', embed = replyEmbed)
 
 async def commandKos(curMessage):
-	curMessageSplit = curMessage.content.lower().split()
-
-	if len(curMessageSplit) < 2:
-		await postCommandHelpMessage(curMessage, commandKos)
-		return
-
-	curMessageGuild = curMessage.guild
-	if curMessageGuild == None:
-		await curMessage.reply("The `.kos` command can only be used in servers. Add me to your server by clicking my profile.")
-		return
-	serverId = curMessageGuild.id
-
-	serverData = getServerData(serverId)
-
-	if curMessageSplit[1] == 'add':
-
-		guildMembersCount = curMessage.guild.member_count
-		print(f'	guild has {guildMembersCount} members')
-		if guildMembersCount != None:
-			if guildMembersCount < 5:
-				await curMessage.reply("You need at least 5 members in your server to use the KOS bot.")
-				return
-
-		if not curMessage.author.guild_permissions.manage_channels and not curMessage.author.guild_permissions.ban_members and not curMessage.author.guild_permissions.administratorand and not curMessage.author.guild_permissions.kick_members and not curMessage.author.guild_permissions.administrator: # duplicated
-			await curMessage.reply("You need to have a staff-level permission in order to edit the KOS list (manage channels, ban members etc.).")
-			return
-		
-		if len(curMessageSplit) < 3:
-			await curMessage.reply("Specify which player to add with `.kos add username`.")
-			return
-
-		for targetUsername in curMessageSplit[2:]:
-			if len(serverData['koslist']) >= 5:
-				await curMessage.reply(f"Not enough KOS list space, remove other targets.")
-				return
-
-			print(f"	adding {targetUsername}")
-
-			targetUuid = getUuidFromUsername(targetUsername)
-
-			if targetUuid == 'unknown':
-				await curMessage.reply(f"Player does not exist.")
-				continue
-
-			if targetUuid in serverData['koslist']:
-				await curMessage.reply(f"Player already added to KOS list.")
-				continue
-
-			serverData['koslist'].append(targetUuid)
-
-			saveServerData(serverData)
-
-			await curMessage.reply(f"Added `{targetUsername}` to KOS list. Make sure there is a channel called exactly `#kos` to send KOS messages to.")
-
-		return
-
-	elif curMessageSplit[1] == 'remove' or curMessageSplit[1] == 'delete' or curMessageSplit[1] == 'del':
-
-		if not curMessage.author.guild_permissions.manage_channels and not curMessage.author.guild_permissions.ban_members and not curMessage.author.guild_permissions.administratorand and not curMessage.author.guild_permissions.kick_members and not curMessage.author.guild_permissions.administrator: # duplicated
-			await curMessage.reply("You need to have a staff-level permission in order to edit the KOS list (manage channels, ban members etc.).")
-			return
-		
-		if len(curMessageSplit) < 3:
-			await curMessage.reply("Specify which player to remove with `.kos remove username`.")
-			return
-
-		targetIdentity = curMessageSplit[2]
-		targetUsername = targetIdentity
-
-		if len(targetIdentity) < 32:
-			targetIdentity = getUuidFromUsername(targetUsername)
-		else:
-			targetUsername = getUsernameFromUuid(targetUsername)
-
-		if targetIdentity not in serverData["koslist"]:
-			await curMessage.reply(f"Player is not on the KOS list.")
-			return
-
-		serverData["koslist"].remove(targetIdentity)
-
-		saveServerData(serverData)
-
-		await curMessage.reply(f"Removed `{targetUsername}` from KOS list.")
-		return
-	
-	elif curMessageSplit[1] == 'status' or curMessageSplit[1] == 'stats' or curMessageSplit[1] == 'list' or curMessageSplit[1] == 'players':
-		
-		embedStr = ""
-		if len(serverData["koslist"]) > 0:
-			for curUuid in serverData["koslist"]:
-				playerUsername = getUsernameFromUuid(curUuid)
-
-				embedStr += f"""`{playerUsername}{' ' * (17 - len(playerUsername))}` `{curUuid}`\n"""
-		else:
-			embedStr += "No players on KOS list."
-
-		replyEmbed = discord.Embed(title = "", color = discord.Color.red())
-		replyEmbed.add_field(name = "KOS List:", value = embedStr[:1024])
-
-		await curMessage.reply('', embed = replyEmbed)
-		return
-
 	await postCommandHelpMessage(curMessage, commandKos)
-
+		
 async def commandNameHistory(curMessage): # broken, prob remove
 	curMessageSplit = curMessage.content.lower().split()
 
@@ -1411,97 +1263,6 @@ async def commandLeaderboards(curMessage):
 
 # other
 
-async def indexKosPlayer(theBot): # deprecated
-	curTime = time.time()
-	curMinute = int(curTime / 60)
-
-	if curMinute > kosData["finishedIndexingMinute"]:
-		if kosData["atUuid"] > len(list(kosData['uuidsDict'].keys())) - 1:
-			kosData["atUuid"] = 0
-			kosData["finishedIndexingMinute"] = curMinute
-		kosUuid = list(kosData["uuidsDict"].keys())[kosData["atUuid"]]
-		kosData["atUuid"] += 1
-
-		if kosUuid not in playerData:
-			playerData[kosUuid] = {}
-
-		print(f"indexing kos player {kosUuid}")
-
-		apiUrl = f"https://api.hypixel.net/player?key={hypixelApiKey}&uuid={kosUuid}"
-		try:
-			apiGot = requestsGet(apiUrl, cacheMinutes = 0)
-		except:
-			print(f'	failed to get api {apiUrl}')
-			return
-
-		# calculate difference in number of kills
-
-		playerKills = getVal(apiGot, ['player', 'stats', 'Pit', 'pit_stats_ptl', 'kills'])
-		if playerKills == None:
-			print('	no player kills data found')
-			return
-		playerKillsOld = getVal(playerData, [kosUuid, "kills"])
-		if playerKillsOld == None:
-			playerKillsOld = playerKills
-		playerData[kosUuid]["kills"] = playerKills
-
-		killDiff = playerKills - playerKillsOld
-
-		# calculate difference in number of assists
-
-		playerAssists = getVal(apiGot, ['player', 'stats', 'Pit', 'pit_stats_ptl', 'assists'])
-		if playerAssists == None:
-			print('	no player assists data found')
-			return
-		playerAssistsOld = getVal(playerData, [kosUuid, "assists"])
-		if playerAssistsOld == None:
-			playerAssistsOld = playerAssists
-		playerData[kosUuid]["assists"] = playerAssists
-
-		assistDiff = playerAssists - playerAssistsOld
-
-		if killDiff == 0 or assistDiff == 0:
-			print('	player has not gained any kills nor assists')
-			return
-
-		# calculate current bounty
-
-		playerBounties = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'bounties'])
-		playerBounty = 0
-		if playerBounties != None:
-			for curBounty in playerBounties:
-				playerBounty += curBounty['amount']
-
-		if playerBounty == 0:
-			print('	player has no bounty')
-			return
-
-		kosUsername = getUsernameFromUuid(kosUuid)
-		playerCurrentMegaStreak = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'selected_megastreak_except_uber'])
-		megaStreakNames = {'grand_finale': 'Grand Finale', 'hermit': 'Hermit', 'to_the_moon': 'To The Moon', 'highlander': 'Highlander', 'beastmode': 'Beastmode', 'overdrive': 'Overdrive'}
-		if playerCurrentMegaStreak == None:
-			playerCurrentMegaStreak = "unknown"
-		if playerCurrentMegaStreak in megaStreakNames:
-			playerCurrentMegaStreak = megaStreakNames[playerCurrentMegaStreak]
-
-		print(f'	player streaking on {playerCurrentMegaStreak} +{killDiff} kills +{assistDiff} assists')
-
-		for guildId in kosData["uuidsDict"][kosUuid]:
-			print(f'		finding channel for {guildId}')
-			for curChannel in theBot.get_guild(guildId).text_channels:
-				if curChannel.name.lower() == "kos":
-
-					print(f'		sending kos msg to guild {guildId}')
-
-					kosEmbed = discord.Embed(title = "", color = discord.Color.red())
-					kosEmbed.add_field(name = f"{kosUsername}", value = f"Bounty: {playerBounty}g\nMega: {playerCurrentMegaStreak}\n+{killDiff} kills +{assistDiff} assists\n**USE http://www.jojo.boats/kos - DISCORD KOS SYSTEM WILL BE DISCONTINUED.**")
-
-					kosEmbed.set_thumbnail(url = f"https://crafatar.com/avatars/{kosUuid}")
-
-					await curChannel.send("", embed = kosEmbed)
-	else:
-		pass # finished minute's worth of indexing
-
 def getCommandFunc(commandStr):
 	if commandStr in commandsList:
 		return commandsList[commandStr]
@@ -1515,22 +1276,8 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	helpMessages = {}
 
 	helpMessages[commandKos] = """
-	`.kos add username`
-	Add a player to the KOS list.
-	Requires a staff-level Discord permission to use (manage channels, ban members etc.)
-	Requires 5 total members in the server for usage.
-
-	`.kos remove username`
-	Remove a player from the KOS list.
-	Requires a staff-level Discord permission to use (manage channels, ban members etc.)
-
-	`.kos list`
-	Show the current KOS player list.
-
-	Allowed 5 players on KOS list per server.
-	Requires a channel called exactly `#kos` to send KOS messages to.
-
-	**USE http://www.jojo.boats/kos - DISCORD KOS SYSTEM WILL BE DISCONTINUED.**
+	KOS system has been removed, use http://www.jojo.boats/kos
+	If you need help feel free to DM Jojo.
 	"""
 
 	helpMessages[commandOwnerHistory] = """
@@ -1695,18 +1442,8 @@ class botClass(discord.Client):
 
 		await theBot.change_presence(activity = discord.Game(".help"))
 
-		if not debugMode:
-			theBot.biSecondlyTask.start()
-
 		theBot.updateLeaderboardPlayer.start()
 		theBot.updateLeaderboardGuilds.start()
-
-	@tasks.loop(seconds=0.5) # deprecated
-	async def biSecondlyTask(theBot):
-		try:
-			await indexKosPlayer(theBot)
-		except Exception as e:
-			print(f'indexing failed: {e}')
 
 	@tasks.loop(minutes = 1)
 	async def updateLeaderboardGuilds(theBot):
@@ -1736,7 +1473,7 @@ class botClass(discord.Client):
 
 		discordsCol.bulk_write(updatesList)
 
-	@tasks.loop(seconds = 2)
+	@tasks.loop(seconds = 5)
 	async def updateLeaderboardPlayer(theBot):
 
 		print('updating leaderboard player')
@@ -1886,8 +1623,6 @@ commandsList["unverify"] = commandUnverify
 
 commandsList["lb"] = commandLeaderboards
 commandsList["leaderboard"] = commandLeaderboards
-
-reloadServerData()
 
 intents = discord.Intents.default()
 intents.message_content = True

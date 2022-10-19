@@ -1380,7 +1380,7 @@ async def commandLeaderboards(curMessage):
 
 # other
 
-async def indexKosPlayer(theBot):
+async def indexKosPlayer(theBot): # deprecated
 	curTime = time.time()
 	curMinute = int(curTime / 60)
 
@@ -1677,7 +1677,7 @@ class botClass(discord.Client):
 		except Exception as e:
 			print(f'indexing failed: {e}')
 
-	@tasks.loop(minutes = 10)
+	@tasks.loop(minutes = 1)
 	async def updateLeaderboardGuilds(theBot):
 
 		print('updating leaderboard guilds')
@@ -1701,7 +1701,7 @@ class botClass(discord.Client):
 
 			discordsCol.update_one({'_id': curDoc['_id']}, {'$set': {'guilds': userGuilds}})
 
-	@tasks.loop(seconds = 60)
+	@tasks.loop(seconds = 2)
 	async def updateLeaderboardPlayer(theBot):
 
 		print('updating leaderboard player')
@@ -1719,7 +1719,7 @@ class botClass(discord.Client):
 
 		playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}?key={pitPandaApiKey}"
 		try:
-			playerApiGot = requestsGet(playerApiUrl, cacheMinutes = 1)
+			playerApiGot = requestsGet(playerApiUrl, cacheMinutes = 10)
 		except:
 			print(f'	failed to get api {playerApiUrl}')
 			return

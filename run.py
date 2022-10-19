@@ -1358,7 +1358,7 @@ async def commandLeaderboards(curMessage):
 		await curMessage.reply(f"Leaderboard type not found. Available types: `{', '.join(leaderboardTypes.keys())}`")
 		return
 
-	guildTotals = {} # key = guild id, value = total value for this leaderboard type
+	guildVals = {} # key = guild id, value = list of values for this leaderboard type
 
 	allDiscordDocs = discordsCol.find()
 
@@ -1375,10 +1375,22 @@ async def commandLeaderboards(curMessage):
 
 		for curGuildId in curDoc['guilds']:
 
-			if curGuildId not in guildTotals:
-				guildTotals[curGuildId] = 0
+			if curGuildId not in guildVals:
+				guildVals[curGuildId] = []
 
-			guildTotals[curGuildId] += curDoc['gamedata'][curLbType]
+			guildVals[curGuildId].append(curDoc['gamedata'][curLbType])
+
+	# sort guild values and put into totals
+
+	guildTotals = {}
+
+	for curGuildId, curGuildVals in guildVals.items():
+
+		curGuildVals.sort(reverse = True)
+
+		print(guildVals[curGuildId][:16])
+
+		guildTotals[curGuildId] = sum(guildVals[curGuildId][:16])
 
 	guildTotals = list(guildTotals.items())
 

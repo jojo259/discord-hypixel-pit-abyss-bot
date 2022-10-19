@@ -65,6 +65,25 @@ leaderboardTypes['deaths'] = ['doc', 'deaths']
 
 # util
 
+def prettyRound(curNum):
+	return round(curNum * 100) / 100
+
+def prettyNumber(curNum):
+
+	if curNum > 1_000_000_000_000:
+		return str(prettyRound(curNum / 1_000_000_000_000)) + 't'
+
+	if curNum > 1_000_000_000:
+		return str(prettyRound(curNum / 1_000_000_000)) + 'b'
+
+	if curNum > 1_000_000:
+		return str(prettyRound(curNum / 1_000_000)) + 'm'
+
+	if curNum > 1_000:
+		return str(prettyRound(curNum / 1_000)) + 'k'
+
+	return curNum
+
 guildNamesCache = {}
 async def getGuildName(guildId):
 
@@ -1336,7 +1355,7 @@ async def commandLeaderboards(curMessage):
 	curLbType = curMessageSplit[1]
 
 	if curLbType not in leaderboardTypes.keys():
-		await curMessage.reply(f"Leaderboard type not found. Available types: `{' '.join(leaderboardTypes.keys())}`")
+		await curMessage.reply(f"Leaderboard type not found. Available types: `{', '.join(leaderboardTypes.keys())}`")
 		return
 
 	guildTotals = {} # key = guild id, value = total value for this leaderboard type
@@ -1371,7 +1390,7 @@ async def commandLeaderboards(curMessage):
 
 		curGuildName = await getGuildName(curGuildId)
 
-		lbString += f'{curGuildName} - {curGuildTotal}\n'
+		lbString += f"""`{curGuildName[:32]}{' ' * (32 - len(curGuildName))}` `{prettyNumber(curGuildTotal)}`\n"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Leaderboard - {curLbType}", value = lbString[:1024])
@@ -1659,7 +1678,7 @@ class botClass(discord.Client):
 		print(f"Logged in as {theBot.user}")
 
 		for guild in theBot.guilds:
-			print(f'in guild with {guild.member_count} members named {guild.name}')
+			print(f'in guild with {guild.member_count}\t members named {guild.name}')
 			await guild.me.edit(nick = "Abyss Bot") # bot tries to reset nickname, doesn't matter if it can't
 
 		await theBot.change_presence(activity = discord.Game(".help"))
@@ -1695,11 +1714,15 @@ class botClass(discord.Client):
 
 		guildMemberDocs = discordsCol.find({'_id': {'$in': list(userGuildsDict.keys())}})
 
+		updatesList = []
+
 		for curDoc in guildMemberDocs:
 
 			userGuilds = userGuildsDict[curDoc['_id']]
 
-			discordsCol.update_one({'_id': curDoc['_id']}, {'$set': {'guilds': userGuilds}})
+			updatesList.append(pymongo.UpdateOne({'_id': curDoc['_id']}, {'$set': {'guilds': userGuilds}}))
+
+		discordsCol.bulk_write(updatesList)
 
 	@tasks.loop(seconds = 2)
 	async def updateLeaderboardPlayer(theBot):

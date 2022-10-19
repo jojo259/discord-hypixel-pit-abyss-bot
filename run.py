@@ -7,6 +7,7 @@ from dateutil import parser
 import math
 import time
 import os
+import random
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -49,9 +50,28 @@ playerData = {}
 serverData = {}
 
 kosData = {'atUuid': 0, 'finishedIndexingMinute': 0, 'uuidsDict': {}}
-print('set kos data')
+
+leaderboardTypes = {}
+leaderboardTypes['gold'] = ['currentGold']
+leaderboardTypes['playtime'] = ['playtime']
+leaderboardTypes['renown'] = ['doc', 'renown']
+leaderboardTypes['pitpandaclout'] = ['doc', 'searches']
+leaderboardTypes['sewertreasures'] = ['doc', 'sewerTreasures']
+leaderboardTypes['nightquests'] = ['doc', 'nightQuests']
+leaderboardTypes['kingsquests'] = ['doc', 'kingsQuests']
 
 # util
+
+guildNamesCache = {}
+async def getGuildName(guildId):
+
+	if guildId not in guildNamesCache:
+
+		gotGuild = await botClass.fetch_guild(guildId)
+
+		guildNamesCache[guildId] = str(gotGuild.name)
+
+	return guildNamesCache[guildId]
 
 cachedRequests = {}
 def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
@@ -1347,6 +1367,59 @@ async def commandUnverify(curMessage):
 	discordsCol.delete_one({'_id': curMessage.author.id})
 	await curMessage.reply(f"Successfully unverified.")
 
+async def commandLeaderboards(curMessage):
+
+	curMessageSplit = curMessage.content.lower().split()
+
+	if len(curMessageSplit) != 2:
+		await postCommandHelpMessage(curMessage, commandLeaderboards)
+		return
+
+	curLbType = curMessageSplit[1]
+
+	if curLbType not in leaderboardTypes.keys():
+		await curMessage.reply(f"Leaderboard type not found. Available types: `{' '.join(leaderboardTypes.keys())}`")
+		return
+
+	guildTotals = {} # key = guild id, value = total value for this leaderboard type
+
+	allDiscordDocs = discordsCol.find()
+
+	for curDoc in allDiscordDocs:
+
+		if 'guilds' not in curDoc:
+			continue
+
+		if 'gamedata' not in curDoc:
+			continue
+
+		if curLbType not in curDoc['gamedata']:
+			continue
+
+		for curGuildId in curDoc['guilds']:
+
+			if curGuildId not in guildTotals:
+				guildTotals[curGuildId] = 0
+
+			guildTotals[curGuildId] += curDoc['gamedata'][curLbType]
+
+	guildTotals = list(guildTotals.items())
+
+	guildTotals.sort(key = lambda x: x[1], reverse = True)
+
+	lbString = ''
+
+	for curGuildId, curGuildTotal in guildTotals[:16]:
+
+		curGuildName = await getGuildName(curGuildId)
+
+		lbString += f'{curGuildName} - {curGuildTotal}\n'
+
+	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
+	replyEmbed.add_field(name = f"Leaderboard - {curLbType}", value = lbString[:1024])
+
+	await curMessage.reply('', embed = replyEmbed)
+
 # other
 
 async def indexKosPlayer(theBot):
@@ -1561,7 +1634,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	"""
 
 	helpMessages[commandVerify] = """
-	`.verify`
+	`.verify username`
 	Verify to link your Discord account with Hypixel.
 	"""
 
@@ -1570,6 +1643,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Remove your current Discord-Hypixel link.
 	"""
 
+	# too long already...
 	helpMessages[commandHelp] = """
 	**.help**
 	Display available commands. Use `.help [command]` to view individual command usage.
@@ -1641,12 +1715,79 @@ class botClass(discord.Client):
 		if not debugMode:
 			theBot.biSecondlyTask.start()
 
-	@tasks.loop(seconds=0.5)
+		theBot.updateLeaderboardPlayer.start()
+		theBot.updateLeaderboardGuilds.start()
+
+	@tasks.loop(seconds=0.5) # deprecated
 	async def biSecondlyTask(theBot):
 		try:
 			await indexKosPlayer(theBot)
 		except Exception as e:
 			print(f'indexing failed: {e}')
+
+	@tasks.loop(minutes = 10)
+	async def updateLeaderboardGuilds(theBot):
+
+		print('updating leaderboard guilds')
+
+		userGuildsDict = {} # dictionary with list of guilds a user is in (key = user id, value = list of guilds)
+
+		for curGuild in theBot.guilds:
+
+			for curMember in curGuild.members:
+
+				if curMember.id not in userGuildsDict:
+					userGuildsDict[curMember.id] = []
+
+				userGuildsDict[curMember.id].append(curGuild.id)
+
+		guildMemberDocs = discordsCol.find({'_id': {'$in': list(userGuildsDict.keys())}})
+
+		for curDoc in guildMemberDocs:
+
+			userGuilds = userGuildsDict[curDoc['_id']]
+
+			discordsCol.update_one({'_id': curDoc['_id']}, {'$set': {'guilds': userGuilds}})
+
+	@tasks.loop(seconds = 60)
+	async def updateLeaderboardPlayer(theBot):
+
+		print('updating leaderboard player')
+		
+		# get random document (good enough)
+
+		allDiscordDocs = discordsCol.find()
+
+		randomDoc = random.choice(list(allDiscordDocs))
+
+		userDiscordId = randomDoc['_id']
+		userUuid = randomDoc['uuid']
+
+		# get data
+
+		playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}?key={pitPandaApiKey}"
+		try:
+			playerApiGot = requestsGet(playerApiUrl, cacheMinutes = 1)
+		except:
+			print(f'	failed to get api {playerApiUrl}')
+			return
+
+		# process
+
+		lbSetVals = {}
+
+		for curLbName, curLbPath in leaderboardTypes.items():
+
+			curLbVal = getVal(playerApiGot, ['data'] + curLbPath)
+			
+			if curLbVal == None:
+				continue
+
+			lbSetVals['gamedata.' + curLbName] = curLbVal
+
+		# set vals
+
+		discordsCol.update_one({'_id': userDiscordId}, {'$set': lbSetVals})
 
 	async def on_message(theBot, curMessage):
 		curAuthor = curMessage.author
@@ -1763,9 +1904,13 @@ commandsList["verify"] = commandVerify
 commandsList["un"] = commandUnverify
 commandsList["unverify"] = commandUnverify
 
+commandsList["lb"] = commandLeaderboards
+commandsList["leaderboard"] = commandLeaderboards
+
 reloadServerData()
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 botClass = botClass(intents = intents)
 botClass.run(botToken)

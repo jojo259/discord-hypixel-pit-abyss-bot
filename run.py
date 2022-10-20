@@ -44,19 +44,76 @@ with open("enchnames.txt") as enchNamesFile:
 		curLineSplit = curLine.split(" ")
 		enchNames[curLineSplit[0]] = curLineSplit[1]
 
-playerData = {}
-
 leaderboardTypes = {}
-leaderboardTypes['gold'] = ['currentGold']
-leaderboardTypes['playtime'] = ['playtime']
+
+# mostly alphabetical probably
+leaderboardTypes['arrowhits'] = ['doc', 'arrowHits']
+leaderboardTypes['arrowshots'] = ['doc', 'arrowShots']
+leaderboardTypes['assists'] = ['doc', 'assists']
+leaderboardTypes['blocksbroken'] = ['doc', 'blocksBroken']
+leaderboardTypes['blocksplaced'] = ['doc', 'blocksPlaced']
+leaderboardTypes['bountiesclaimed'] = ['doc', 'bountiesClaimed']
+leaderboardTypes['bounty'] = ['doc', 'bounty']
+leaderboardTypes['bowaccuracy'] = ['doc', 'bowAccuracy']
+leaderboardTypes['bowdamagedealt'] = ['doc', 'bowDamageDealt']
+leaderboardTypes['bowdamageratio'] = ['doc', 'bowDamageRatio']
+leaderboardTypes['bowdamagereceived'] = ['doc', 'bowDamageReceived']
+leaderboardTypes['chatmessages'] = ['doc', 'chatMessages']
+leaderboardTypes['contracts'] = ['doc', 'contracts']
+leaderboardTypes['contractsratio'] = ['doc', 'contractsRatio']
+leaderboardTypes['contractsstarted'] = ['doc', 'contractsStarted']
+leaderboardTypes['damagedealt'] = ['doc', 'damageDealt']
+leaderboardTypes['damageratio'] = ['doc', 'damageRatio']
+leaderboardTypes['damagereceived'] = ['doc', 'damageReceived']
+leaderboardTypes['darkpantst2'] = ['doc', 'darkPantsT2']
+leaderboardTypes['deaths'] = ['doc', 'deaths']
+leaderboardTypes['diamonditemspurchased'] = ['doc', 'diamondItemsPurchased']
+leaderboardTypes['enderchestopened'] = ['doc', 'enderchestOpened']
+leaderboardTypes['fishedanything'] = ['doc', 'fishedAnything']
+leaderboardTypes['fishedfish'] = ['doc', 'fishedFish']
+leaderboardTypes['fishingrodcasts'] = ['doc', 'fishingRodCasts']
+leaderboardTypes['gapples'] = ['doc', 'gapples']
+leaderboardTypes['genesispoints'] = ['doc', 'genesisPoints']
+leaderboardTypes['gheads'] = ['doc', 'gheads']
+leaderboardTypes['gold'] = ['doc', 'gold']
+leaderboardTypes['goldhourly'] = ['doc', 'goldHourly']
+leaderboardTypes['hiddenjewelstriggered'] = ['doc', 'hiddenJewelsTriggered']
+leaderboardTypes['higheststreak'] = ['doc', 'highestStreak']
+leaderboardTypes['ingotsgold'] = ['doc', 'ingotsGold']
+leaderboardTypes['ingotspickedup'] = ['doc', 'ingotsPickedUp']
+leaderboardTypes['joins'] = ['doc', 'joins']
+leaderboardTypes['jumpsintopit'] = ['doc', 'jumpsIntoPit']
+leaderboardTypes['kadr'] = ['doc', 'kadr']
+leaderboardTypes['kdr'] = ['doc', 'kdr']
+leaderboardTypes['killassisthourly'] = ['doc', 'killAssistHourly']
+leaderboardTypes['kills'] = ['doc', 'kills']
+leaderboardTypes['killshourly'] = ['doc', 'killsHourly']
+leaderboardTypes['kingsquests'] = ['doc', 'kingsQuests']
+leaderboardTypes['launcherlaunches'] = ['doc', 'launcherLaunches']
+leaderboardTypes['lavabuckets'] = ['doc', 'lavaBuckets']
+leaderboardTypes['leftclicks'] = ['doc', 'leftClicks']
+leaderboardTypes['lifetimegold'] = ['doc', 'lifetimeGold']
+leaderboardTypes['lifetimerenown'] = ['doc', 'lifetimeRenown']
+leaderboardTypes['meleedamagedealt'] = ['doc', 'meleeDamageDealt']
+leaderboardTypes['meleedamageratio'] = ['doc', 'meleeDamageRatio']
+leaderboardTypes['meleedamagereceived'] = ['doc', 'meleeDamageReceived']
+leaderboardTypes['nightquests'] = ['doc', 'nightQuests']
+leaderboardTypes['obsidianbroken'] = ['doc', 'obsidianBroken']
+leaderboardTypes['playtime'] = ['doc', 'playtime']
+leaderboardTypes['ragepotatoeseaten'] = ['doc', 'ragePotatoesEaten']
 leaderboardTypes['renown'] = ['doc', 'renown']
 leaderboardTypes['pitpandaclout'] = ['doc', 'searches']
 leaderboardTypes['sewertreasures'] = ['doc', 'sewerTreasures']
-leaderboardTypes['nightquests'] = ['doc', 'nightQuests']
-leaderboardTypes['kingsquests'] = ['doc', 'kingsQuests']
+leaderboardTypes['soups'] = ['doc', 'soups']
+leaderboardTypes['swordhits'] = ['doc', 'swordHits']
+leaderboardTypes['tierones'] = ['doc', 'tierOnes']
+leaderboardTypes['tierthrees'] = ['doc', 'tierThrees']
+leaderboardTypes['tiertwos'] = ['doc', 'tierTwos']
+leaderboardTypes['totaljumps'] = ['doc', 'totalJumps']
+leaderboardTypes['vampirehealedhp'] = ['doc', 'vampireHealedHp']
+leaderboardTypes['wheatfarmed'] = ['doc', 'wheatFarmed']
 leaderboardTypes['xp'] = ['doc', 'xp']
-leaderboardTypes['contracts'] = ['doc', 'contracts']
-leaderboardTypes['deaths'] = ['doc', 'deaths']
+leaderboardTypes['xphourly'] = ['doc', 'xpHourly']
 
 # util
 
@@ -627,7 +684,7 @@ async def commandPlayerStatus(curMessage):
 
 async def commandKos(curMessage):
 	await postCommandHelpMessage(curMessage, commandKos)
-		
+
 async def commandNameHistory(curMessage): # broken, prob remove
 	curMessageSplit = curMessage.content.lower().split()
 
@@ -1256,6 +1313,9 @@ async def commandLeaderboards(curMessage):
 
 		lbString += f"""`{str(atGuild + 1)[:3]}{' ' * (3 - len(str(atGuild + 1)))}` `{curGuildName[:32]}{' ' * (32 - len(curGuildName))}` `{prettyNumber(curGuildTotal)}`\n"""
 
+	if lbString == '':
+		lbString = 'No data found'
+
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Leaderboard - {curLbType}", value = lbString[:1024])
 
@@ -1278,6 +1338,13 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	helpMessages[commandKos] = """
 	KOS system has been removed, use http://www.jojo.boats/kos
 	If you need help feel free to DM Jojo.
+	"""
+
+	helpMessages[commandLeaderboards] = """
+	`.lb type`
+	View Discord server leaderboards for Pit data e.g. kills or XP.
+
+	Uses the top 16 verified players for that stat.
 	"""
 
 	helpMessages[commandOwnerHistory] = """
@@ -1373,16 +1440,13 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Remove your current Discord-Hypixel link.
 	"""
 
-	# too long already...
+	# kinda too long
 	helpMessages[commandHelp] = """
 	**.help**
 	Display available commands. Use `.help [command]` to view individual command usage.
 
 	**.ownerhistory**
 	View the owner history of a mystic.
-
-	**.kos**
-	Use the KOS tracker system.
 
 	**.player**
 	View player information and status.
@@ -1407,9 +1471,6 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 
 	**.verify**
 	Verify to link your Discord account with your Hypixel account.
-
-	**.unverify**
-	Remove your current Discord-Hypixel link.
 
 	**.boatssearch**
 	Search for any item (*any*) using jojo.boats data. Includes regs, darks, etc.
@@ -1442,8 +1503,9 @@ class botClass(discord.Client):
 
 		await theBot.change_presence(activity = discord.Game(".help"))
 
-		theBot.updateLeaderboardPlayer.start()
-		theBot.updateLeaderboardGuilds.start()
+		if not debugMode:
+			theBot.updateLeaderboardPlayer.start()
+			theBot.updateLeaderboardGuilds.start()
 
 	@tasks.loop(minutes = 1)
 	async def updateLeaderboardGuilds(theBot):

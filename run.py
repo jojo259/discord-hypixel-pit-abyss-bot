@@ -1604,13 +1604,11 @@ class botClass(discord.Client):
 		if not debugMode and curMessage.channel.id == 1010870694650847272: # production bot disabled inside test channel
 			return
 
-		# allow verify with any commands prefix (for watching other servers and yoinking their verifications)
-		if curMessage.content.lower()[1:8] == 'verify ':
-			await commandVerify(curMessage)
-
 		if not len(curMessage.content) > 0:
 			return
-		if curMessage.content[0] != botClass.commandsPrefix:
+
+		# second condition allows verify with any commands prefix (for watching random servers and yoinking their verifications)
+		if curMessage.content[0] != botClass.commandsPrefix and curMessage.content.lower()[1:8] != 'verify ':
 			return
 
 		curMessageSplit = curMessage.content.lower().split()

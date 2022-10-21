@@ -188,12 +188,9 @@ def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 		print('probably timed out')
 		return {'success': False, 'message': 'probably timed out'}
 
-	apiSuccess = True
 	if 'success' in apiGot:
-		if not apiGot['success']:
-			apiSuccess = False
-	if apiSuccess:
-		cachedRequests[apiUrl] = {"time": curTime, "data": apiGot}
+		if apiGot['success'] == True:
+			cachedRequests[apiUrl] = {"time": curTime, "data": apiGot}
 
 	return apiGot
 
@@ -1587,6 +1584,8 @@ class botClass(discord.Client):
 
 	desiredDisplayName = 'Abyss'
 
+	minPlayerCheckIntervalMinutes = 10
+
 	async def on_ready(theBot):
 		print(f"Logged in as {theBot.user}")
 
@@ -1653,9 +1652,7 @@ class botClass(discord.Client):
 			print('	no leaderboard player to check')
 			return
 
-		#randomDoc = random.choice(list(allDiscordDocs))
-
-		print(f"checking {checkDoc['username']}, queue is {checkQueue}")
+		print(f"	checking {checkDoc['username']}, queue is {checkQueue}")
 
 		userDiscordId = checkDoc['_id']
 		userUuid = checkDoc['uuid']
@@ -1664,10 +1661,15 @@ class botClass(discord.Client):
 
 		playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}?key={pitPandaApiKey}"
 		try:
-			playerApiGot = requestsGet(playerApiUrl, timeout = 3, cacheMinutes = 10)
+			playerApiGot = requestsGet(playerApiUrl, timeout = 3, cacheMinutes = theBot.minPlayerCheckIntervalMinutes - 1) # -1 in case of exact timings issue
 		except:
 			print(f'	failed to get api {playerApiUrl}')
 			return
+
+		if 'success' in playerApiGot:
+			if playerApiGot['success'] != True:
+				print('player api failed, probably ratelimit')
+				return
 
 		# work out when to check user next
 
@@ -1676,7 +1678,7 @@ class botClass(discord.Client):
 		playerLastSave = getVal(playerApiGot, ['data', 'lastSave'])
 		if playerLastSave == None: playerLastSave = curTime - 86400 # idk i guess just check it again soon-ish
 
-		checkAt = curTime + max(600, (curTime - playerLastSave / 1000) / 24)
+		checkAt = curTime + max(theBot.minPlayerCheckIntervalMinutes * 60, (curTime - playerLastSave / 1000) / 24)
 
 		setVals['checkat'] = checkAt
 

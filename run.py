@@ -1370,6 +1370,61 @@ async def commandLeaderboards(curMessage):
 
 	await curMessage.reply('', embed = replyEmbed)
 
+async def commandServerLeaderboard(curMessage):
+
+	curMessageSplit = curMessage.content.lower().split()
+
+	if len(curMessageSplit) != 2:
+		await postCommandHelpMessage(curMessage, commandServerLeaderboard)
+		return
+
+	curLbType = curMessageSplit[1]
+
+	if curLbType not in leaderboardTypes.keys():
+		await curMessage.reply(f"Leaderboard type not found. Available types: `{', '.join(leaderboardTypes.keys())}`")
+		return
+
+	# get data for this server
+
+	discordDocs = discordsCol.find({'guilds': curMessage.guild.id})
+
+	serverVals = {} # key is username, val is stat
+
+	for curDoc in discordDocs:
+
+		if 'username' not in curDoc:
+			continue
+
+		if 'guilds' not in curDoc:
+			continue
+
+		if 'gamedata' not in curDoc:
+			continue
+
+		if curLbType not in curDoc['gamedata']:
+			continue
+
+		serverVals[curDoc['username']] = curDoc['gamedata'][curLbType]
+
+	serverVals = list(serverVals.items())
+
+	serverVals.sort(key = lambda x: x[1], reverse = True)
+
+	lbString = ''
+
+	for atPlayer, (playerUsername, playerVal) in enumerate(serverVals[:16]):
+
+		# python has a feature to make this cleaner...
+		lbString += f"""`{str(atPlayer + 1)[:3]}{' ' * (3 - len(str(atPlayer + 1)))}` `{playerUsername[:16]}{' ' * (16 - len(playerUsername))}` `{prettyNumber(playerVal)}`\n"""
+
+	if lbString == '':
+		lbString = 'No data found'
+
+	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
+	replyEmbed.add_field(name = f"Current Server Leaderboard - {curLbType}", value = lbString[:1024])
+
+	await curMessage.reply('', embed = replyEmbed)
+
 # other
 
 def getCommandFunc(commandStr):
@@ -1394,6 +1449,13 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	View Discord server leaderboards for Pit data e.g. kills or XP.
 
 	Uses the average of the top 16 verified players for that stat.
+	"""
+
+	helpMessages[commandServerLeaderboard] = """
+	`.se type`
+	View leaderboards for this Discord server for Pit data e.g. kills or XP.
+
+	Uses verified players in the current Discord server.
 	"""
 
 	helpMessages[commandOwnerHistory] = """
@@ -1489,7 +1551,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Remove your current Discord-Hypixel link.
 	"""
 
-	# kinda too long
+	# kinda too long + needs both leaderboards commands
 	helpMessages[commandHelp] = """
 	**.help**
 	Display available commands. Use `.help [command]` to view individual command usage.
@@ -1742,6 +1804,13 @@ commandsList["unverify"] = commandUnverify
 
 commandsList["lb"] = commandLeaderboards
 commandsList["leaderboard"] = commandLeaderboards
+commandsList["leaderboards"] = commandLeaderboards
+
+commandsList["se"] = commandServerLeaderboard
+commandsList["server"] = commandServerLeaderboard
+commandsList["serverlb"] = commandServerLeaderboard
+commandsList["serverleaderboard"] = commandServerLeaderboard
+commandsList["serverleaderboards"] = commandServerLeaderboard
 
 intents = discord.Intents.default()
 intents.message_content = True

@@ -35,14 +35,29 @@ pitPandaApiKey = os.environ['pitpandaapikey']
 webHookUrl = os.environ['webhookurl']
 hypixelApiKey = os.environ['hypixelapikey']
 
-print('getting ench names')
-
 enchNames = {}
-with open("enchnames.txt") as enchNamesFile:
-	enchNamesFile = enchNamesFile.read()
-	for curLine in enchNamesFile.split("\n"):
+def loadEnchNames():
+
+	print('getting ench names')
+
+	enchNamesUrl = "http://www.jojo.boats/api/enchnames"
+
+	try:
+
+		enchNamesStr = requests.get(enchNamesUrl, timeout = 30).text
+
+	except Exception as e:
+
+		print(f'failed to get enchnames from api, using file backup. error {e}')
+
+		with open("enchnames.txt") as enchNamesFile:
+			enchNamesStr = enchNamesFile.read()
+
+	for curLine in enchNamesStr.split("\n"):
 		curLineSplit = curLine.split(" ")
 		enchNames[curLineSplit[0]] = curLineSplit[1]
+
+loadEnchNames()
 
 leaderboardTypes = {}
 

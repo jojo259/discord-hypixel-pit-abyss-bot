@@ -1637,7 +1637,7 @@ class botClass(discord.Client):
 	async def updateLeaderboardGuildsTask(theBot):
 		await updateLeaderboardGuilds()
 
-	@tasks.loop(seconds = 10)
+	@tasks.loop(seconds = 5)
 	async def updateLeaderboardPlayerTask(theBot):
 
 		curTime = time.time()
@@ -1659,7 +1659,7 @@ class botClass(discord.Client):
 
 		checkQueue = discordsCol.count_documents({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
 
-		print(f"checking leaderboard player {checkDoc['username']}, queue is {checkQueue}")
+		print(f"checking leaderboard player {checkDoc['username']}, queue will be {checkQueue - 1}")
 
 		userDiscordId = checkDoc['_id']
 		userUuid = checkDoc['uuid']
@@ -1693,7 +1693,7 @@ class botClass(discord.Client):
 		playerLastSave = getVal(playerApiGot, ['data', 'lastSave'])
 		if playerLastSave == None: playerLastSave = curTime - 86400 # idk i guess just check it again soon-ish
 
-		checkAt = curTime + max(theBot.minPlayerCheckIntervalMinutes * 60, (curTime - playerLastSave / 1000) / theBot.checkPlayerDiffConstant)
+		checkAt = curTime + max(theBot.minPlayerCheckIntervalMinutes * 60, (curTime - playerLastSave / 1000) / theBot.checkPlayerDiffConstant) * (0.9 + random.random() / 5) # randomness to help spread out future checks
 
 		setVals['checkat'] = checkAt
 

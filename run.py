@@ -1585,6 +1585,7 @@ class botClass(discord.Client):
 	desiredDisplayName = 'Abyss'
 
 	minPlayerCheckIntervalMinutes = 10
+	checkPlayerDiffConstant = 24 # divides the time since player's last save to decide how long until it should check that player again e.g. if set to 24 and a player was online 24hrs ago, it will check them in 1hr. if they were online 24 days ago, it will check them in 1 day.
 
 	async def on_ready(theBot):
 		print(f"Logged in as {theBot.user}")
@@ -1635,7 +1636,7 @@ class botClass(discord.Client):
 
 		discordsCol.bulk_write(updatesList)
 
-	@tasks.loop(seconds = 1.25)
+	@tasks.loop(seconds = 10)
 	async def updateLeaderboardPlayer(theBot):
 
 		print('updating leaderboard player')
@@ -1678,7 +1679,7 @@ class botClass(discord.Client):
 		playerLastSave = getVal(playerApiGot, ['data', 'lastSave'])
 		if playerLastSave == None: playerLastSave = curTime - 86400 # idk i guess just check it again soon-ish
 
-		checkAt = curTime + max(theBot.minPlayerCheckIntervalMinutes * 60, (curTime - playerLastSave / 1000) / 24)
+		checkAt = curTime + max(theBot.minPlayerCheckIntervalMinutes * 60, (curTime - playerLastSave / 1000) / theBot.checkPlayerDiffConstant)
 
 		setVals['checkat'] = checkAt
 

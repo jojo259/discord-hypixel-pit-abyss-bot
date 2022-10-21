@@ -1604,27 +1604,37 @@ class botClass(discord.Client):
 		if not debugMode and curMessage.channel.id == 1010870694650847272: # production bot disabled inside test channel
 			return
 
-		curMessageContent = curMessage.content
-		if not len(curMessageContent) > 0:
+		# allow verify with any commands prefix (for watching other servers and yoinking their verifications)
+		if curMessage.content.lower()[1:8] == 'verify ':
+			await commandVerify(curMessage)
+
+		if not len(curMessage.content) > 0:
 			return
-		if curMessageContent[0] != botClass.commandsPrefix:
+		if curMessage.content[0] != botClass.commandsPrefix:
 			return
 
-		curMessageSplit = curMessageContent.lower().split()
+		curMessageSplit = curMessage.content.lower().split()
 
 		curMessageCommand = curMessageSplit[0][1:]
 
-		if curMessageCommand in commandsList:
-			if curAuthor.id != 121692189230104577: # jojo's discord ID (i don't need logs for my own commands)
-				curGuildName = curMessage.guild.name
-				logStr = f"user `{curAuthor}` in `{curGuildName}` sent command: `{curMessageContent}`"
-				print(logStr)
-				sendDiscord(logStr)
+		if curMessageCommand not in commandsList:
+			return # not a real command
 
-			curMessageCommandFunc = getCommandFunc(curMessageCommand)
+		curMessageCommandFunc = getCommandFunc(curMessageCommand)
 
-			async with curMessage.channel.typing():
-				await commandsList[curMessageCommand](curMessage)
+		# do command
+
+		async with curMessage.channel.typing():
+			await commandsList[curMessageCommand](curMessage)
+
+		# log command
+
+		if curAuthor.id != 121692189230104577: # jojo's discord ID (i don't need logs for my own commands)
+
+			curGuildName = curMessage.guild.name
+			logStr = f"user `{curAuthor}` in `{curGuildName}` sent command: `{curMessage.content}`"
+			print(logStr)
+			sendDiscord(logStr)
 
 commandsList = {}
 

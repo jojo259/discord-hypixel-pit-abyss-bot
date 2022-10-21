@@ -134,7 +134,7 @@ def prettyNumber(curNum):
 	if curNum > 1_000:
 		return str(prettyRound(curNum / 1_000)) + 'k'
 
-	return curNum
+	return prettyRound(curNum)
 
 guildNamesCache = {}
 async def getGuildName(guildId):
@@ -1309,8 +1309,11 @@ async def commandLeaderboards(curMessage):
 
 	for atGuild, (curGuildId, curGuildTotal) in enumerate(guildTotals[:16]):
 
+		curGuildTotal /= topPlayersCount
+
 		curGuildName = await getGuildName(curGuildId)
 
+		# python has a feature to make this cleaner...
 		lbString += f"""`{str(atGuild + 1)[:3]}{' ' * (3 - len(str(atGuild + 1)))}` `{curGuildName[:32]}{' ' * (32 - len(curGuildName))}` `{prettyNumber(curGuildTotal)}`\n"""
 
 	if lbString == '':
@@ -1344,7 +1347,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	`.lb type`
 	View Discord server leaderboards for Pit data e.g. kills or XP.
 
-	Uses the top 16 verified players for that stat.
+	Uses the average of the top 16 verified players for that stat.
 	"""
 
 	helpMessages[commandOwnerHistory] = """
@@ -1498,7 +1501,7 @@ class botClass(discord.Client):
 		print(f"Logged in as {theBot.user}")
 
 		for guild in theBot.guilds:
-			print(f'in guild with {guild.member_count}\t members named {guild.name}')
+			print(f'in guild with {guild.member_count} members named {guild.name}')
 			await guild.me.edit(nick = "Abyss Bot") # bot tries to reset nickname, doesn't matter if it can't
 
 		await theBot.change_presence(activity = discord.Game(".help"))

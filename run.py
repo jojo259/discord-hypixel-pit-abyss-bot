@@ -1410,6 +1410,32 @@ def getCommandFunc(commandStr):
 		return commandsList[commandStr]
 	return None
 
+async def updateLeaderboardGuilds():
+	print('updating leaderboard guilds')
+
+	userGuildsDict = {} # dictionary with list of guilds a user is in (key = user id, value = list of guilds)
+
+	for curGuild in botClass.guilds:
+
+		for curMember in curGuild.members:
+
+			if curMember.id not in userGuildsDict:
+				userGuildsDict[curMember.id] = []
+
+			userGuildsDict[curMember.id].append(curGuild.id)
+
+	guildMemberDocs = discordsCol.find({'_id': {'$in': list(userGuildsDict.keys())}})
+
+	updatesList = []
+
+	for curDoc in guildMemberDocs:
+
+		userGuilds = userGuildsDict[curDoc['_id']]
+
+		updatesList.append(pymongo.UpdateOne({'_id': curDoc['_id']}, {'$set': {'guilds': userGuilds}}))
+
+	discordsCol.bulk_write(updatesList)
+
 async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	if helpCommandFunc == None:
 		await curMessage.reply("Command not found, type `.help`")
@@ -1604,41 +1630,15 @@ class botClass(discord.Client):
 		await theBot.change_presence(activity = discord.Game(".help"))
 
 		if not debugMode:
-			theBot.updateLeaderboardPlayer.start()
-			theBot.updateLeaderboardGuilds.start()
+			theBot.updateLeaderboardPlayerTask.start()
+			theBot.updateLeaderboardGuildsTask.start()
 
-	@tasks.loop(minutes = 1)
-	async def updateLeaderboardGuilds(theBot):
+	@tasks.loop(minutes = 10)
+	async def updateLeaderboardGuildsTask(theBot):
+		await updateLeaderboardGuilds()
 
-		print('updating leaderboard guilds')
-
-		userGuildsDict = {} # dictionary with list of guilds a user is in (key = user id, value = list of guilds)
-
-		for curGuild in theBot.guilds:
-
-			for curMember in curGuild.members:
-
-				if curMember.id not in userGuildsDict:
-					userGuildsDict[curMember.id] = []
-
-				userGuildsDict[curMember.id].append(curGuild.id)
-
-		guildMemberDocs = discordsCol.find({'_id': {'$in': list(userGuildsDict.keys())}})
-
-		updatesList = []
-
-		for curDoc in guildMemberDocs:
-
-			userGuilds = userGuildsDict[curDoc['_id']]
-
-			updatesList.append(pymongo.UpdateOne({'_id': curDoc['_id']}, {'$set': {'guilds': userGuilds}}))
-
-		discordsCol.bulk_write(updatesList)
-
-	@tasks.loop(seconds = 2)
-	async def updateLeaderboardPlayer(theBot):
-
-		print('updating leaderboard player')
+	@tasks.loop(seconds = 10)
+	async def updateLeaderboardPlayerTask(theBot):
 
 		curTime = time.time()
 		
@@ -1646,18 +1646,20 @@ class botClass(discord.Client):
 
 		checkDocs = list(discordsCol.find({'checkat': {'$exists': False}}))
 
+		if len(checkDocs) != 0:
+			await updateLeaderboardGuilds() # new player added, update guilds immediately
+
 		if len(checkDocs) == 0:
 			checkDocs = list(discordsCol.find({'checkat': {'$lt': curTime}}))
 
 		if len(checkDocs) == 0:
-			print('	no leaderboard player to check')
 			return
 
 		checkDoc = random.choice(list(checkDocs))
 
 		checkQueue = discordsCol.count_documents({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
 
-		print(f"	checking {checkDoc['username']}, queue is {checkQueue}")
+		print(f"checking leaderboard player {checkDoc['username']}, queue is {checkQueue}")
 
 		userDiscordId = checkDoc['_id']
 		userUuid = checkDoc['uuid']

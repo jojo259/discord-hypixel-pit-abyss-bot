@@ -40,13 +40,15 @@ jojoDiscordId = 121692189230104577
 enchNames = {}
 def loadEnchNames():
 
+	global enchNames
+
 	print('getting ench names')
 
 	enchNamesUrl = "http://www.jojo.boats/api/enchnames"
 
 	try:
 
-		enchNamesStr = requests.get(enchNamesUrl, timeout = 30).text
+		enchNames = requests.get(enchNamesUrl, timeout = 30).json()
 
 	except Exception as e:
 
@@ -55,9 +57,11 @@ def loadEnchNames():
 		with open("enchnames.txt") as enchNamesFile:
 			enchNamesStr = enchNamesFile.read()
 
-	for curLine in enchNamesStr.split("\n"):
-		curLineSplit = curLine.split(" ")
-		enchNames[curLineSplit[0]] = curLineSplit[1]
+			for curLine in enchNamesStr.split("\n"):
+				curLineSplit = curLine.split(" ")
+				enchNames[curLineSplit[0]] = curLineSplit[1]
+
+	print(f'loaded {len(enchNames.keys())} enchant aliases')
 
 loadEnchNames()
 

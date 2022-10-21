@@ -674,6 +674,23 @@ async def commandPlayerStatus(curMessage):
 	playerLastSave = getVal(apiGot, ['data', 'lastSave'])
 	if playerLastSave == None: playerLastSave = 0
 
+	playerUsername = getVal(apiGot, ['data', 'name'])
+
+	playerDiscordStr = getVal(apiGot, ['data', 'doc', 'discord'])
+
+	# try and check if verified
+
+	try:
+		discordDoc = discordsCol.find_one({'username': playerUsername})
+
+		if discordDoc != None:
+			discordDocId = discordDoc['_id']
+			discordUser = await botClass.fetch_user(discordDocId)
+
+			playerDiscordStr = discordUser.name + '#' + discordUser.discriminator + ' (verified)'
+	except Exception as e:
+		print(f'failed {e}')
+
 	embedStr = ""
 	if playerOnlineStatus or curTime - playerLastSave / 1000 < 180:
 		embedStr = "[ONLINE]"
@@ -688,6 +705,9 @@ async def commandPlayerStatus(curMessage):
 
 		embedStr += f"In Pit <t:{int(playerLastSave / 1000)}:R>"
 		embedStr += f"\nLast seen in Hypixel {playerLastLogout}"
+
+		if playerDiscordStr != None:
+			embedStr += f"\nDiscord: `{playerDiscordStr}`"
 
 	embedTitle = f"{stripColorCodes(formattedName)}"
 
@@ -1322,8 +1342,7 @@ async def commandLeaderboards(curMessage):
 
 		curGuildName = await getGuildName(curGuildId)
 
-		# python has a feature to make this cleaner...
-		lbString += f"""`{str(atGuild + 1)[:3]}{' ' * (3 - len(str(atGuild + 1)))}` `{curGuildName[:32]}{' ' * (32 - len(curGuildName))}` `{prettyNumber(curGuildTotal)}`\n"""
+		lbString += f"`{str(atGuild + 1)[:3]: <3}` `{curGuildName[:32]: <32}` `{prettyNumber(curGuildTotal): <8}`\n"
 
 	if lbString == '':
 		lbString = 'No data found'
@@ -1650,6 +1669,9 @@ class botClass(discord.Client):
 		curAuthor = curMessage.author
 		if curAuthor == theBot.user:
 			return
+
+		if debugMode:
+			print(f'msg in channel {curMessage.channel.name} in server {curMessage.guild.name} by user {curMessage.author.name}#{curMessage.author.discriminator}: {curMessage.content}')
 
 		if debugMode and curMessage.channel.id != 1010870694650847272: # debug bot only enabled inside test channel
 			return

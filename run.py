@@ -35,6 +35,8 @@ pitPandaApiKey = os.environ['pitpandaapikey']
 webHookUrl = os.environ['webhookurl']
 hypixelApiKey = os.environ['hypixelapikey']
 
+jojoDiscordId = 121692189230104577
+
 enchNames = {}
 def loadEnchNames():
 
@@ -1184,7 +1186,27 @@ async def commandsDupeCheck(curMessage):
 
 async def commandVerify(curMessage):
 
-	userDoc = discordsCol.find_one({'_id': curMessage.author.id})
+	curMessageSplit = curMessage.content.lower().split()
+
+	# check initial conditions for command
+
+	if len(curMessageSplit) != 2 and not (len(curMessageSplit) == 3 and curMessage.author.id == jojoDiscordId):
+		await postCommandHelpMessage(curMessage, commandVerify)
+		return
+
+	# init variables
+
+	verifyDiscordId = curMessage.author.id
+
+	manualJojoVerification = False
+
+	if len(curMessageSplit) == 3 and curMessage.author.id == jojoDiscordId:
+		manualJojoVerification = True
+		verifyDiscordId = int(curMessageSplit[2])
+
+	# check if already verified
+
+	userDoc = discordsCol.find_one({'_id': verifyDiscordId})
 
 	if userDoc != None:
 
@@ -1200,11 +1222,7 @@ async def commandVerify(curMessage):
 
 		return
 
-	curMessageSplit = curMessage.content.lower().split()
-
-	if len(curMessageSplit) != 2:
-		await postCommandHelpMessage(curMessage, commandVerify)
-		return
+	# get api
 
 	playerUsername = curMessageSplit[1]
 
@@ -1216,18 +1234,12 @@ async def commandVerify(curMessage):
 		await curMessage.reply("API failed or timed out.")
 		return
 
+	# check if success
+
 	if 'success' in playerApiGot:
 		if playerApiGot['success'] != True:
 			await curMessage.reply("Player doesn't exist.")
 			return
-
-	apiDiscord = getVal(playerApiGot, ['data', 'doc', 'discord'])
-
-	messageDiscord = curMessage.author.name + '#' + curMessage.author.discriminator
-
-	if apiDiscord != messageDiscord:
-		await curMessage.reply("Hypixel Discord doesn't match your Discord.")
-		return
 
 	# get uuid
 
@@ -1253,7 +1265,26 @@ async def commandVerify(curMessage):
 
 	playerUsername = playerApiGot['data']['name']
 
-	discordsCol.insert_one({'_id': curMessage.author.id, 'uuid': playerUuid, 'username': playerUsername})
+	# if manual jojo verification skip actual checking and insert
+
+	if manualJojoVerification:
+		discordsCol.insert_one({'_id': verifyDiscordId, 'uuid': playerUuid, 'username': playerUsername})
+		await curMessage.reply(f"Successfully verified as `{playerUsername}`.")
+		return
+
+	# check if discord matches
+
+	apiDiscord = getVal(playerApiGot, ['data', 'doc', 'discord'])
+
+	messageDiscord = curMessage.author.name + '#' + curMessage.author.discriminator
+
+	if apiDiscord != messageDiscord:
+		await curMessage.reply("Hypixel Discord doesn't match your Discord.")
+		return
+
+	# insert
+
+	discordsCol.insert_one({'_id': verifyDiscordId, 'uuid': playerUuid, 'username': playerUsername})
 	await curMessage.reply(f"Successfully verified as `{playerUsername}`.")
 
 async def commandUnverify(curMessage):
@@ -1627,7 +1658,7 @@ class botClass(discord.Client):
 
 		# log command
 
-		if curAuthor.id != 121692189230104577: # jojo's discord ID (i don't need logs for my own commands)
+		if curAuthor.id != jojoDiscordId: # i don't need logs for my own commands
 
 			curGuildName = curMessage.guild.name
 			logStr = f"user `{curAuthor}` in `{curGuildName}` sent command: `{curMessage.content}`"

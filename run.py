@@ -1393,8 +1393,7 @@ async def commandServerLeaderboard(curMessage):
 
 	for atPlayer, (playerUsername, playerVal) in enumerate(serverVals[:16]):
 
-		# python has a feature to make this cleaner...
-		lbString += f"""`{str(atPlayer + 1)[:3]}{' ' * (3 - len(str(atPlayer + 1)))}` `{playerUsername[:16]}{' ' * (16 - len(playerUsername))}` `{prettyNumber(playerVal)}`\n"""
+		lbString += f"""`{str(atPlayer + 1)[:3]: <3}` `{playerUsername[:16]: <16}` `{prettyNumber(playerVal): <8}`\n"""
 
 	if lbString == '':
 		lbString = 'No data found'
@@ -1636,7 +1635,7 @@ class botClass(discord.Client):
 
 		discordsCol.bulk_write(updatesList)
 
-	@tasks.loop(seconds = 10)
+	@tasks.loop(seconds = 2)
 	async def updateLeaderboardPlayer(theBot):
 
 		print('updating leaderboard player')

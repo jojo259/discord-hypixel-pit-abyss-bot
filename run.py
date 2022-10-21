@@ -306,7 +306,7 @@ def getUsernameFromUuid(curUuid):
 
 	apiUrl = f"https://sessionserver.mojang.com/session/minecraft/profile/{curUuid}"
 	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
+		apiGot = requestsGet(apiUrl, timeout = 3, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"
@@ -329,7 +329,7 @@ def getUuidFromUsername(curUsername):
 
 	apiUrl = f"https://api.mojang.com/users/profiles/minecraft/{curUsername}"
 	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
+		apiGot = requestsGet(apiUrl, timeout = 3, cacheMinutes = 1)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"
@@ -701,47 +701,6 @@ async def commandPlayerStatus(curMessage):
 
 async def commandKos(curMessage):
 	await postCommandHelpMessage(curMessage, commandKos)
-
-async def commandNameHistory(curMessage): # broken, prob remove
-	curMessageSplit = curMessage.content.lower().split()
-
-	if len(curMessageSplit) != 2:
-		await postCommandHelpMessage(curMessage, commandNameHistory)
-		return
-
-	targetIdentity = curMessageSplit[1]
-	targetIdentity = getUuidFromUsername(targetIdentity)
-
-	if targetIdentity == "unknown":
-		await curMessage.reply("Player not found.")
-		return
-
-	apiUrl = f"https://api.mojang.com/user/profiles/{targetIdentity}/names"
-	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 1440)
-	except:
-		print(f'	failed to get api {apiUrl}')
-		await curMessage.reply("API failed or timed out.")
-		return
-
-	if type(apiGot) is not list:
-		await curMessage.reply("API failed, are you sure that player exists?")
-		return
-
-	embedStr = ""
-	for curData in apiGot:
-		curUsername = ""
-		if "name" in curData:
-			curUsername = curData["name"]
-		curTime = "Original"
-		if "changedToAt" in curData:
-			curTime = f"""<t:{int(curData["changedToAt"] / 1000)}:R>"""
-		embedStr += f"""`{curUsername}{' ' * (17 - len(curUsername))}` {curTime}\n"""
-
-	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
-	replyEmbed.add_field(name = "Usernames", value = embedStr[:1024])
-
-	await curMessage.reply('', embed = replyEmbed)
 
 async def commandItemSearch(curMessage):
 	itemsPerPage = 8
@@ -1449,6 +1408,8 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	View Discord server leaderboards for Pit data e.g. kills or XP.
 
 	Uses the average of the top 16 verified players for that stat.
+
+	Use `.se type` to view the leaderboard for the current Discord server.
 	"""
 
 	helpMessages[commandServerLeaderboard] = """
@@ -1466,11 +1427,6 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 
 	For example:
 	`.oh jojoq booboo moc3 lives 100`
-	"""
-
-	helpMessages[commandNameHistory] = """
-	`.nh username`
-	Get the name history of a player.
 	"""
 
 	helpMessages[commandPlayerStatus] = """
@@ -1551,7 +1507,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Remove your current Discord-Hypixel link.
 	"""
 
-	# kinda too long + needs both leaderboards commands
+	# kinda too long
 	helpMessages[commandHelp] = """
 	**.help**
 	Display available commands. Use `.help [command]` to view individual command usage.
@@ -1562,11 +1518,11 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	**.player**
 	View player information and status.
 
+	**.leaderboards**
+	View Discord server leaderboards for Pit.
+
 	**.events**
 	View upcoming events.
-	
-	**.namehistory**
-	View the name history of a player.
 
 	**.mutuals**
 	Show mutual Hypixel friends of two players.
@@ -1664,7 +1620,7 @@ class botClass(discord.Client):
 
 		playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}?key={pitPandaApiKey}"
 		try:
-			playerApiGot = requestsGet(playerApiUrl, cacheMinutes = 10)
+			playerApiGot = requestsGet(playerApiUrl, timeout = 3, cacheMinutes = 10)
 		except:
 			print(f'	failed to get api {playerApiUrl}')
 			return
@@ -1747,10 +1703,6 @@ commandsList["playerstatus"] = commandPlayerStatus
 commandsList["kos"] = commandKos
 commandsList["killonsite"] = commandKos
 commandsList["killonsight"] = commandKos
-
-commandsList["nh"] = commandNameHistory
-commandsList["name"] = commandNameHistory
-commandsList["namehistory"] = commandNameHistory
 
 commandsList["is"] = commandItemSearch
 commandsList["itemsearch"] = commandItemSearch

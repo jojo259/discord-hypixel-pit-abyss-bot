@@ -1582,14 +1582,25 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 # bot init stuff
 
 class botClass(discord.Client):
+
 	commandsPrefix = "."
+
+	desiredDisplayName = 'Abyss'
 
 	async def on_ready(theBot):
 		print(f"Logged in as {theBot.user}")
 
-		for guild in theBot.guilds:
-			print(f'in guild with {guild.member_count} members named {guild.name}')
-			await guild.me.edit(nick = "Abyss Bot") # bot tries to reset nickname, doesn't matter if it can't
+		for curGuild in theBot.guilds:
+
+			print(f'Bot is in guild with {curGuild.member_count} members named {curGuild.name}')
+
+			# try to reset nickname
+
+			botMember = await curGuild.fetch_member(theBot.user.id)
+
+			if botMember.display_name != theBot.desiredDisplayName:
+				print(f'	Bot is nicknamed as {botMember.display_name}, trying to set to desired nickname')
+				await curGuild.me.edit(nick = theBot.desiredDisplayName)
 
 		await theBot.change_presence(activity = discord.Game(".help"))
 
@@ -1625,19 +1636,29 @@ class botClass(discord.Client):
 
 		discordsCol.bulk_write(updatesList)
 
-	@tasks.loop(seconds = 5)
+	@tasks.loop(seconds = 1.25)
 	async def updateLeaderboardPlayer(theBot):
 
 		print('updating leaderboard player')
+
+		curTime = time.time()
 		
-		# get random document (good enough)
+		# get due player document
 
-		allDiscordDocs = discordsCol.find()
+		checkDoc = discordsCol.find_one({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
 
-		randomDoc = random.choice(list(allDiscordDocs))
+		checkQueue = discordsCol.count_documents({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
 
-		userDiscordId = randomDoc['_id']
-		userUuid = randomDoc['uuid']
+		if checkDoc == None:
+			print('	no leaderboard player to check')
+			return
+
+		#randomDoc = random.choice(list(allDiscordDocs))
+
+		print(f"checking {checkDoc['username']}, queue is {checkQueue}")
+
+		userDiscordId = checkDoc['_id']
+		userUuid = checkDoc['uuid']
 
 		# get data
 
@@ -1648,9 +1669,18 @@ class botClass(discord.Client):
 			print(f'	failed to get api {playerApiUrl}')
 			return
 
-		# process
+		# work out when to check user next
 
-		lbSetVals = {}
+		setVals = {}
+
+		playerLastSave = getVal(playerApiGot, ['data', 'lastSave'])
+		if playerLastSave == None: playerLastSave = curTime - 86400 # idk i guess just check it again soon-ish
+
+		checkAt = curTime + max(600, (curTime - playerLastSave / 1000) / 24)
+
+		setVals['checkat'] = checkAt
+
+		# process
 
 		for curLbName, curLbPath in leaderboardTypes.items():
 
@@ -1659,11 +1689,11 @@ class botClass(discord.Client):
 			if curLbVal == None:
 				continue
 
-			lbSetVals['gamedata.' + curLbName] = curLbVal
+			setVals['gamedata.' + curLbName] = curLbVal
 
 		# set vals
 
-		discordsCol.update_one({'_id': userDiscordId}, {'$set': lbSetVals})
+		discordsCol.update_one({'_id': userDiscordId}, {'$set': setVals})
 
 	async def on_message(theBot, curMessage):
 		curAuthor = curMessage.author

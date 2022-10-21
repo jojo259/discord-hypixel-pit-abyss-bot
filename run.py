@@ -706,8 +706,8 @@ async def commandPlayerStatus(curMessage):
 		embedStr += f"In Pit <t:{int(playerLastSave / 1000)}:R>"
 		embedStr += f"\nLast seen in Hypixel {playerLastLogout}"
 
-		if playerDiscordStr != None:
-			embedStr += f"\nDiscord: `{playerDiscordStr}`"
+	if playerDiscordStr != None:
+		embedStr += f"\nDiscord: `{playerDiscordStr}`"
 
 	embedTitle = f"{stripColorCodes(formattedName)}"
 

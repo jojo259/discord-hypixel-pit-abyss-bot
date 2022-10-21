@@ -1584,7 +1584,7 @@ class botClass(discord.Client):
 
 	desiredDisplayName = 'Abyss'
 
-	minPlayerCheckIntervalMinutes = 10
+	minPlayerCheckIntervalMinutes = 60
 	checkPlayerDiffConstant = 24 # divides the time since player's last save to decide how long until it should check that player again e.g. if set to 24 and a player was online 24hrs ago, it will check them in 1hr. if they were online 24 days ago, it will check them in 1 day.
 
 	async def on_ready(theBot):
@@ -1645,13 +1645,18 @@ class botClass(discord.Client):
 		
 		# get due player document
 
-		checkDoc = discordsCol.find_one({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
+		checkDocs = list(discordsCol.find({'checkat': {'$exists': False}}))
 
-		checkQueue = discordsCol.count_documents({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
+		if len(checkDocs) == 0:
+			checkDocs = list(discordsCol.find({'checkat': {'$lt': curTime}}))
 
-		if checkDoc == None:
+		if len(checkDocs) == 0:
 			print('	no leaderboard player to check')
 			return
+
+		checkDoc = random.choice(list(checkDocs))
+
+		checkQueue = discordsCol.count_documents({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
 
 		print(f"	checking {checkDoc['username']}, queue is {checkQueue}")
 
@@ -1669,6 +1674,14 @@ class botClass(discord.Client):
 
 		if 'success' in playerApiGot:
 			if playerApiGot['success'] != True:
+
+				if 'error' in playerApiGot:
+					if playerApiGot['error'] == 'Player has not played the Pit':
+
+						# no pit data, delete user (got wiped or smth idk)
+						discordsCol.delete_one({'_id': userDiscordId})
+						return
+
 				print('player api failed, probably ratelimit')
 				return
 

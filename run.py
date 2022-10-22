@@ -3,11 +3,12 @@ print("init")
 import discord
 from discord.ext import tasks
 import requests
-from dateutil import parser
+import parser
 import math
 import time
 import os
 import random
+import collections
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -138,6 +139,36 @@ leaderboardTypes['xphourly'] = ['doc', 'xpHourly']
 
 # util
 
+def romanNumeral(num): # yoinked
+
+    roman = collections.OrderedDict()
+    roman[1000] = "M"
+    roman[900] = "CM"
+    roman[500] = "D"
+    roman[400] = "CD"
+    roman[100] = "C"
+    roman[90] = "XC"
+    roman[50] = "L"
+    roman[40] = "XL"
+    roman[10] = "X"
+    roman[9] = "IX"
+    roman[5] = "V"
+    roman[4] = "IV"
+    roman[1] = "I"
+
+    def roman_num(num):
+        for r in roman.keys():
+            x, y = divmod(num, r)
+            yield roman[r] * x
+            num -= (r * x)
+            if num <= 0:
+                break
+
+    return "".join([a for a in roman_num(num)])
+
+def getAuthorDoc(curMessage):
+	return discordsCol.find_one({'_id': curMessage.author.id})
+
 def prettyRound(curNum):
 	return round(curNum * 100) / 100
 
@@ -179,7 +210,6 @@ def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 			print("	returning cached request")
 			return cachedRequests[apiUrl]["data"]
 		else:
-			print("	deleting cached request")
 			cachedRequests.pop(apiUrl)
 
 	try:
@@ -344,7 +374,7 @@ def getUuidFromUsername(curUsername):
 	return "unknown"
 
 def parseTimestamp(curTimestamp):
-	return int(parser.parse(curTimestamp).timestamp())
+	return int(dateutil.parser.parse(curTimestamp).timestamp())
 
 def getUrlParams(paramWords, forPanda):
 	atPage = None
@@ -832,11 +862,24 @@ async def commandMutuals(curMessage):
 	curMessageSplitLen = len(curMessageSplit)
 
 	if curMessageSplitLen != 3:
-		await postCommandHelpMessage(curMessage, commandMutuals)
-		return
+
+		if curMessageSplitLen > 3 or curMessageSplitLen < 2:
+			await postCommandHelpMessage(curMessage, commandMutuals)
+			return
+
+		if curMessageSplitLen == 2:
+			authorDoc = getAuthorDoc(curMessage)
+
+			if authorDoc == None:
+				await postCommandHelpMessage(curMessage, commandMutuals)
+				return
 
 	firstPlayerUuid = getUuidFromUsername(curMessageSplit[1])
-	secondPlayerUuid = getUuidFromUsername(curMessageSplit[2])
+
+	if authorDoc == None:
+		secondPlayerUuid = getUuidFromUsername(curMessageSplit[2])
+	else:
+		secondPlayerUuid = authorDoc['uuid']
 
 	firstApiUrl = f"https://pitpanda.rocks/api/friends/{firstPlayerUuid}?key={pitPandaApiKey}"
 	try:
@@ -922,11 +965,17 @@ async def commandKingsQuestCalc(curMessage):
 
 	curMessageSplitLen = len(curMessageSplit)
 
-	if curMessageSplitLen != 2:
+	if curMessageSplitLen == 1:
+		authorDoc = getAuthorDoc(curMessage)
+
+	if curMessageSplitLen != 2 and authorDoc == None:
 		await postCommandHelpMessage(curMessage, commandKingsQuestCalc)
 		return
 
-	targetIdentity = curMessageSplit[1]
+	if curMessageSplitLen == 1:
+		targetIdentity = authorDoc['uuid']
+	else:
+		targetIdentity = curMessageSplit[1]
 
 	apiUrl = f"https://pitpanda.rocks/api/players/{targetIdentity}?key={pitPandaApiKey}"
 	try:
@@ -973,23 +1022,36 @@ async def commandKingsQuestCalc(curMessage):
 
 	# reply
 
-	embedStr = f"King's Quest would bring {playerUsername} to p{playerPrestige} lvl{playerLevel}"
+	embedStr = f"""
+		King's Quest would bring {playerUsername} to [{romanNumeral(playerPrestige)}-{playerLevel}].
+		This would waste {int(max(0, playerTotalXp))} xp.
+	"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = "King's Quest", value = embedStr)
 
 	await curMessage.reply('', embed = replyEmbed)
 
-async def commandsTradeLimits(curMessage):
+async def commandTradeLimits(curMessage):
+
 	curMessageSplit = curMessage.content.lower().split()
 
 	curMessageSplitLen = len(curMessageSplit)
 
-	if curMessageSplitLen != 2:
-		await postCommandHelpMessage(curMessage, commandsTradeLimits)
+	if curMessageSplitLen == 1:
+		authorDoc = getAuthorDoc(curMessage)
+
+	if curMessageSplitLen != 2 and authorDoc == None:
+		await postCommandHelpMessage(curMessage, commandKingsQuestCalc)
 		return
 
-	targetIdentity = curMessageSplit[1]
+	print(curMessageSplitLen)
+
+	if curMessageSplitLen == 1:
+		targetIdentity = authorDoc['uuid']
+	else:
+		targetIdentity = curMessageSplit[1]
+
 	targetUuid = getUuidFromUsername(targetIdentity)
 
 	apiUrl = f"https://api.hypixel.net/player?key={hypixelApiKey}&uuid={targetUuid}"
@@ -1019,16 +1081,18 @@ async def commandsTradeLimits(curMessage):
 		await curMessage.reply('No trade limits found. 0/25')
 		return
 
-	#playerGoldTransactions = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'gold_transactions'])
-	#if playerGoldTransactions != None and len(playerGoldTransactions) != 0:
-	#	playerGoldTransactions = list(filter(lambda x: x['timestamp'] > (curTime - 86400) * 1000, playerGoldTransactions)) 
+	playerGoldTransactions = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'gold_transactions'])
+	if playerGoldTransactions != None and len(playerGoldTransactions) != 0:
+		playerGoldTransactions = list(filter(lambda x: x['timestamp'] > (curTime - 86400) * 1000, playerGoldTransactions))
+
+	totalGoldTransactionAmount = 0
+	for curGoldTransaction in playerGoldTransactions:
+		totalGoldTransactionAmount += int(curGoldTransaction['amount'])
 
 	# reply
 
-	#totalGoldLimitUsed = 0
-
 	embedStr = ""
-	embedStr += f"""`{str(len(playerTrades)) + '/25'}{' ' * (17 - len(str(len(playerTrades)) + '/25'))}` Now\n"""
+	embedStr += f"""`{str(len(playerTrades)) + '/25': <16}` `{str(totalGoldTransactionAmount) + 'g': <16}` Now\n"""
 	for atTrade, curTradeTime in enumerate(playerTrades):
 
 		if len(embedStr) > 512:
@@ -1036,14 +1100,12 @@ async def commandsTradeLimits(curMessage):
 
 		tradeLimitsStr = f'{len(playerTrades) - atTrade - 1}/25'
 
-		#for curGoldTransaction in playerGoldTransactions:
-		#	if curGoldTransaction['timestamp'] == curTradeTime:
-		#		curGoldTransactionAmount = int(curGoldTransaction['amount'])
-		#		totalGoldLimitUsed += curGoldTransactionAmount
-		
-		#tradeLimitsStr += f'    {int((50000 - totalGoldLimitUsed) / 1000)}k/50k'
+		for curGoldTransaction in playerGoldTransactions:
+			if curGoldTransaction['timestamp'] == curTradeTime:
+				totalGoldTransactionAmount -= curGoldTransaction['amount']
+				break
 
-		embedStr += f"""`{tradeLimitsStr}{' ' * (17 - len(tradeLimitsStr))}` <t:{int((curTradeTime / 1000) + 86400)}:R>\n"""
+		embedStr += f"""`{tradeLimitsStr: <16}` `{str(totalGoldTransactionAmount) + 'g': <16}` <t:{int((curTradeTime / 1000) + 86400)}:R>\n"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Trade limits for {playerUsername}", value = embedStr)
@@ -1609,7 +1671,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	Calculate level gain from King's Quest.
 	"""
 
-	helpMessages[commandsTradeLimits] = """
+	helpMessages[commandTradeLimits] = """
 	`.tr username`
 
 	View when your trades limits expire.
@@ -1817,11 +1879,11 @@ commandsList["kingsquest"] = commandKingsQuestCalc
 commandsList["kingquestcalc"] = commandKingsQuestCalc
 commandsList["kingsquestcalc"] = commandKingsQuestCalc
 
-commandsList["tr"] = commandsTradeLimits
-commandsList["trade"] = commandsTradeLimits
-commandsList["trades"] = commandsTradeLimits
-commandsList["tradelims"] = commandsTradeLimits
-commandsList["tradelimits"] = commandsTradeLimits
+commandsList["tr"] = commandTradeLimits
+commandsList["trade"] = commandTradeLimits
+commandsList["trades"] = commandTradeLimits
+commandsList["tradelims"] = commandTradeLimits
+commandsList["tradelimits"] = commandTradeLimits
 
 commandsList["dc"] = commandsDupeCheck
 commandsList["dupe"] = commandsDupeCheck

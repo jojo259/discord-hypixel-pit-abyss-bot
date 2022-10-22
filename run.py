@@ -1073,7 +1073,7 @@ async def commandTradeLimits(curMessage):
 	playerTrades = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'trade_timestamps'])
 
 	curTime = time.time()
-	playerTrades = list(filter(lambda x: x > (curTime - 86400) * 1000, playerTrades)) 
+	playerTrades = list(filter(lambda x: x > (curTime - 3600 * 21) * 1000, playerTrades)) 
 
 	if playerTrades == None or len(playerTrades) == 0:
 		await curMessage.reply('No trade limits found. 0/25')
@@ -1081,7 +1081,7 @@ async def commandTradeLimits(curMessage):
 
 	playerGoldTransactions = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'gold_transactions'])
 	if playerGoldTransactions != None and len(playerGoldTransactions) != 0:
-		playerGoldTransactions = list(filter(lambda x: x['timestamp'] > (curTime - 86400) * 1000, playerGoldTransactions))
+		playerGoldTransactions = list(filter(lambda x: x['timestamp'] > (curTime - 3600 * 21) * 1000, playerGoldTransactions))
 
 	totalGoldTransactionAmount = 0
 	for curGoldTransaction in playerGoldTransactions:
@@ -1103,7 +1103,7 @@ async def commandTradeLimits(curMessage):
 				totalGoldTransactionAmount -= curGoldTransaction['amount']
 				break
 
-		embedStr += f"""`{tradeLimitsStr: <16}` `{str(totalGoldTransactionAmount) + 'g': <16}` <t:{int((curTradeTime / 1000) + 86400)}:R>\n"""
+		embedStr += f"""`{tradeLimitsStr: <16}` `{str(totalGoldTransactionAmount) + 'g': <16}` <t:{int((curTradeTime / 1000) + 3600 * 21)}:R>\n"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Trade limits for {playerUsername}", value = embedStr)
@@ -1148,14 +1148,7 @@ async def commandContractLimits(curMessage):
 		await curMessage.reply('No player data found.')
 		return
 
-	playerEndedContracts = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'ended_contracts'])
-
-	curTime = time.time()
-	playerEndedContracts = list(filter(lambda x: x['completion_date'] > (curTime - 86400) * 1000, playerEndedContracts)) 
-
-	if playerEndedContracts == None or len(playerEndedContracts) == 0:
-		await curMessage.reply('No contract limits found.')
-		return
+	# find current contract limit
 
 	playerContractLimit = 3
 
@@ -1175,6 +1168,15 @@ async def commandContractLimits(curMessage):
 		if curUpgrade['tier'] + 4 > playerContractLimit:
 			playerContractLimit = curUpgrade['tier'] + 4
 
+	playerEndedContracts = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'ended_contracts'])
+
+	curTime = time.time()
+	playerEndedContracts = list(filter(lambda x: x['completion_date'] > (curTime - 3600 * 21) * 1000, playerEndedContracts)) 
+
+	if playerEndedContracts == None or len(playerEndedContracts) == 0:
+		await curMessage.reply(f'No contract limits found. 0/{playerContractLimit}')
+		return
+
 	# reply
 
 	embedStr = ""
@@ -1186,7 +1188,7 @@ async def commandContractLimits(curMessage):
 
 		contractsLimitStr = f'{len(playerEndedContracts) - atEndedContract - 1}/{playerContractLimit}'
 
-		embedStr += f"""`{contractsLimitStr: <16}` <t:{int((curEndedContractTime['completion_date'] / 1000) + 86400)}:R>\n"""
+		embedStr += f"""`{contractsLimitStr: <16}` <t:{int((curEndedContractTime['completion_date'] / 1000) + 3600 * 21)}:R>\n"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Contract limits for {playerUsername}", value = embedStr)

@@ -3,7 +3,7 @@ print("init")
 import discord
 from discord.ext import tasks
 import requests
-import dateutil
+from dateutil import parser
 import math
 import time
 import os
@@ -374,7 +374,7 @@ def getUuidFromUsername(curUsername):
 	return "unknown"
 
 def parseTimestamp(curTimestamp):
-	return int(dateutil.parser.parse(curTimestamp).timestamp())
+	return int(parser.parse(curTimestamp).timestamp())
 
 def getUrlParams(paramWords, forPanda):
 	atPage = None

@@ -1024,7 +1024,7 @@ async def commandKingsQuestCalc(curMessage):
 
 	embedStr = f"""
 		King's Quest would bring {playerUsername} to [{romanNumeral(playerPrestige)}-{playerLevel}].
-		This would waste {int(max(0, playerTotalXp))} xp.
+		This would waste {prettyNumber(max(0, playerTotalXp))} xp.
 	"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())

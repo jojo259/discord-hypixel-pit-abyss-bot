@@ -1042,10 +1042,8 @@ async def commandTradeLimits(curMessage):
 		authorDoc = getAuthorDoc(curMessage)
 
 	if curMessageSplitLen != 2 and authorDoc == None:
-		await postCommandHelpMessage(curMessage, commandKingsQuestCalc)
+		await postCommandHelpMessage(curMessage, commandTradeLimits)
 		return
-
-	print(curMessageSplitLen)
 
 	if curMessageSplitLen == 1:
 		targetIdentity = authorDoc['uuid']
@@ -1109,6 +1107,89 @@ async def commandTradeLimits(curMessage):
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Trade limits for {playerUsername}", value = embedStr)
+
+	await curMessage.reply('', embed = replyEmbed)
+
+async def commandContractLimits(curMessage):
+
+	curMessageSplit = curMessage.content.lower().split()
+
+	curMessageSplitLen = len(curMessageSplit)
+
+	if curMessageSplitLen == 1:
+		authorDoc = getAuthorDoc(curMessage)
+
+	if curMessageSplitLen != 2 and authorDoc == None:
+		await postCommandHelpMessage(curMessage, commandContractLimits)
+		return
+
+	if curMessageSplitLen == 1:
+		targetIdentity = authorDoc['uuid']
+	else:
+		targetIdentity = curMessageSplit[1]
+
+	targetUuid = getUuidFromUsername(targetIdentity)
+
+	apiUrl = f"https://api.hypixel.net/player?key={hypixelApiKey}&uuid={targetUuid}"
+	try:
+		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {apiUrl}')
+		await curMessage.reply("API failed or timed out.")
+		return
+
+	if not apiGot['success']:
+		await curMessage.reply("API failed, are you sure that player exists?")
+		return
+
+	playerUsername = getVal(apiGot, ['player', 'displayname'])
+
+	if playerUsername == None:
+		await curMessage.reply('No player data found.')
+		return
+
+	playerEndedContracts = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'ended_contracts'])
+
+	curTime = time.time()
+	playerEndedContracts = list(filter(lambda x: x['completion_date'] > (curTime - 86400) * 1000, playerEndedContracts)) 
+
+	if playerEndedContracts == None or len(playerEndedContracts) == 0:
+		await curMessage.reply('No contract limits found.')
+		return
+
+	playerContractLimit = 3
+
+	playerRenownUpgrades = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'renown_unlocks'])
+
+	for curUpgrade in playerRenownUpgrades:
+
+		if 'key' not in curUpgrade:
+			continue
+
+		if 'tier' not in curUpgrade:
+			continue
+
+		if curUpgrade['key'] != 'contractor':
+			continue
+
+		if curUpgrade['tier'] + 4 > playerContractLimit:
+			playerContractLimit = curUpgrade['tier'] + 4
+
+	# reply
+
+	embedStr = ""
+	embedStr += f"""`{str(len(playerEndedContracts)) + f'/{playerContractLimit}': <16}` Now\n"""
+	for atEndedContract, curEndedContractTime in enumerate(playerEndedContracts):
+
+		if len(embedStr) > 512:
+			break
+
+		contractsLimitStr = f'{len(playerEndedContracts) - atEndedContract - 1}/{playerContractLimit}'
+
+		embedStr += f"""`{contractsLimitStr: <16}` <t:{int((curEndedContractTime['completion_date'] / 1000) + 86400)}:R>\n"""
+
+	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
+	replyEmbed.add_field(name = f"Contract limits for {playerUsername}", value = embedStr)
 
 	await curMessage.reply('', embed = replyEmbed)
 
@@ -1884,6 +1965,13 @@ commandsList["trade"] = commandTradeLimits
 commandsList["trades"] = commandTradeLimits
 commandsList["tradelims"] = commandTradeLimits
 commandsList["tradelimits"] = commandTradeLimits
+
+commandsList["co"] = commandContractLimits
+commandsList["contract"] = commandContractLimits
+commandsList["contracts"] = commandContractLimits
+commandsList["contractslims"] = commandContractLimits
+commandsList["contractlimits"] = commandContractLimits
+commandsList["contractslimits"] = commandContractLimits
 
 commandsList["dc"] = commandsDupeCheck
 commandsList["dupe"] = commandsDupeCheck

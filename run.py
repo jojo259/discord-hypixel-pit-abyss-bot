@@ -1436,6 +1436,79 @@ async def updateLeaderboardGuilds():
 
 	discordsCol.bulk_write(updatesList)
 
+async def updateLeaderboardPlayer():
+	curTime = time.time()
+		
+	# get due player document
+
+	checkDocs = list(discordsCol.find({'checkat': {'$exists': False}}))
+
+	if len(checkDocs) != 0:
+		await updateLeaderboardGuilds() # new player added, update guilds immediately
+
+	if len(checkDocs) == 0:
+		checkDocs = list(discordsCol.find({'checkat': {'$lt': curTime}}))
+
+	if len(checkDocs) == 0:
+		return
+
+	checkDoc = random.choice(list(checkDocs))
+
+	checkQueue = discordsCol.count_documents({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
+
+	print(f"checking leaderboard player {checkDoc['username']}, queue will be {checkQueue - 1}")
+
+	userDiscordId = checkDoc['_id']
+	userUuid = checkDoc['uuid']
+
+	# get data
+
+	playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}?key={pitPandaApiKey}"
+	try:
+		playerApiGot = requestsGet(playerApiUrl, timeout = 3, cacheMinutes = botClass.minPlayerCheckIntervalMinutes - 1) # -1 in case of exact timings issue
+	except:
+		print(f'	failed to get api {playerApiUrl}')
+		return
+
+	if 'success' in playerApiGot:
+		if playerApiGot['success'] != True:
+
+			if 'error' in playerApiGot:
+				if playerApiGot['error'] == 'Player has not played the Pit':
+
+					# no pit data, delete user (got wiped or smth idk)
+					discordsCol.delete_one({'_id': userDiscordId})
+					return
+
+			print('player api failed, probably ratelimit')
+			return
+
+	# work out when to check user next
+
+	setVals = {}
+
+	playerLastSave = getVal(playerApiGot, ['data', 'lastSave'])
+	if playerLastSave == None: playerLastSave = curTime - 86400 # idk i guess just check it again soon-ish
+
+	checkAt = curTime + max(botClass.minPlayerCheckIntervalMinutes * 60, (curTime - playerLastSave / 1000) / botClass.checkPlayerDiffConstant) * (0.9 + random.random() / 5) # randomness to help spread out future checks
+
+	setVals['checkat'] = checkAt
+
+	# process
+
+	for curLbName, curLbPath in leaderboardTypes.items():
+
+		curLbVal = getVal(playerApiGot, ['data'] + curLbPath)
+		
+		if curLbVal == None:
+			continue
+
+		setVals['gamedata.' + curLbName] = curLbVal
+
+	# set vals
+
+	discordsCol.update_one({'_id': userDiscordId}, {'$set': setVals})
+
 async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	if helpCommandFunc == None:
 		await curMessage.reply("Command not found, type `.help`")
@@ -1635,82 +1708,17 @@ class botClass(discord.Client):
 
 	@tasks.loop(minutes = 10)
 	async def updateLeaderboardGuildsTask(theBot):
-		await updateLeaderboardGuilds()
+		try:
+			await updateLeaderboardGuilds()
+		except Exception as e:
+			print(f'error {e}')
 
 	@tasks.loop(seconds = 5)
 	async def updateLeaderboardPlayerTask(theBot):
-
-		curTime = time.time()
-		
-		# get due player document
-
-		checkDocs = list(discordsCol.find({'checkat': {'$exists': False}}))
-
-		if len(checkDocs) != 0:
-			await updateLeaderboardGuilds() # new player added, update guilds immediately
-
-		if len(checkDocs) == 0:
-			checkDocs = list(discordsCol.find({'checkat': {'$lt': curTime}}))
-
-		if len(checkDocs) == 0:
-			return
-
-		checkDoc = random.choice(list(checkDocs))
-
-		checkQueue = discordsCol.count_documents({'$or': [{'checkat': {'$exists': False}}, {'checkat': {'$lt': curTime}}]})
-
-		print(f"checking leaderboard player {checkDoc['username']}, queue will be {checkQueue - 1}")
-
-		userDiscordId = checkDoc['_id']
-		userUuid = checkDoc['uuid']
-
-		# get data
-
-		playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}?key={pitPandaApiKey}"
 		try:
-			playerApiGot = requestsGet(playerApiUrl, timeout = 3, cacheMinutes = theBot.minPlayerCheckIntervalMinutes - 1) # -1 in case of exact timings issue
-		except:
-			print(f'	failed to get api {playerApiUrl}')
-			return
-
-		if 'success' in playerApiGot:
-			if playerApiGot['success'] != True:
-
-				if 'error' in playerApiGot:
-					if playerApiGot['error'] == 'Player has not played the Pit':
-
-						# no pit data, delete user (got wiped or smth idk)
-						discordsCol.delete_one({'_id': userDiscordId})
-						return
-
-				print('player api failed, probably ratelimit')
-				return
-
-		# work out when to check user next
-
-		setVals = {}
-
-		playerLastSave = getVal(playerApiGot, ['data', 'lastSave'])
-		if playerLastSave == None: playerLastSave = curTime - 86400 # idk i guess just check it again soon-ish
-
-		checkAt = curTime + max(theBot.minPlayerCheckIntervalMinutes * 60, (curTime - playerLastSave / 1000) / theBot.checkPlayerDiffConstant) * (0.9 + random.random() / 5) # randomness to help spread out future checks
-
-		setVals['checkat'] = checkAt
-
-		# process
-
-		for curLbName, curLbPath in leaderboardTypes.items():
-
-			curLbVal = getVal(playerApiGot, ['data'] + curLbPath)
-			
-			if curLbVal == None:
-				continue
-
-			setVals['gamedata.' + curLbName] = curLbVal
-
-		# set vals
-
-		discordsCol.update_one({'_id': userDiscordId}, {'$set': setVals})
+			await updateLeaderboardPlayer()
+		except Exception as e:
+			print(f'error {e}')
 
 	async def on_message(theBot, curMessage):
 		curAuthor = curMessage.author

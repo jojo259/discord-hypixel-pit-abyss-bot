@@ -3,7 +3,7 @@ print("init")
 import discord
 from discord.ext import tasks
 import requests
-import parser
+import dateutil
 import math
 import time
 import os

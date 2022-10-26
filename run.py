@@ -1897,8 +1897,14 @@ class botClass(discord.Client):
 
 		# do command
 
-		async with curMessage.channel.typing():
-			await commandsList[curMessageCommand](curMessage)
+		try: # use try so logging happens below regardless of command success
+
+			async with curMessage.channel.typing():
+				await commandsList[curMessageCommand](curMessage)
+
+		except Exception as e:
+
+			print(f'command errored: {e}')
 
 		# log command
 

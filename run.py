@@ -10,8 +10,8 @@ import os
 import random
 import collections
 
-from dotenv import load_dotenv
-load_dotenv()
+import dotenv
+dotenv.load_dotenv()
 
 debugMode = False
 if 'debugmode' in os.environ:
@@ -218,9 +218,29 @@ def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 		print('probably timed out')
 		return {'success': False, 'message': 'probably timed out'}
 
-	if 'success' in apiGot:
-		if apiGot['success'] == True:
-			cachedRequests[apiUrl] = {"time": curTime, "data": apiGot}
+	if apiGot.get('success') == True:
+
+		cachedRequests[apiUrl] = {"time": curTime, "data": apiGot}
+
+		if random.randint(1, 64) == 1: # clean cache to prevent "memory leak" crash
+
+			print('cleaning cache')
+
+			maxCacheMinutes = 60
+
+			toPop = []
+
+			for curCachedRequestUrl, curCachedRequestData in cachedRequests.items(): # probably a cleaner way to do this
+
+				if curCachedRequestData.get('time', 0) < curTime - maxCacheMinutes:
+
+					toPop.append(curCachedRequestUrl)
+
+			print(f'popping {len(toPop)} cached requests')
+
+			for curPop in toPop:
+
+				cachedRequests.pop(curPop)
 
 	return apiGot
 
@@ -337,7 +357,7 @@ def getUsernameFromUuid(curUuid):
 
 	apiUrl = f"https://sessionserver.mojang.com/session/minecraft/profile/{curUuid}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 3, cacheMinutes = 1)
+		apiGot = requestsGet(apiUrl, timeout = 3, cacheMinutes = 60)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"
@@ -360,7 +380,7 @@ def getUuidFromUsername(curUsername):
 
 	apiUrl = f"https://api.mojang.com/users/profiles/minecraft/{curUsername}"
 	try:
-		apiGot = requestsGet(apiUrl, timeout = 3, cacheMinutes = 1)
+		apiGot = requestsGet(apiUrl, timeout = 3, cacheMinutes = 60)
 	except:
 		print(f'	failed to get api {apiUrl}')
 		return "unknown"

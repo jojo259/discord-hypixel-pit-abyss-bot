@@ -218,6 +218,9 @@ def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 		print('probably timed out')
 		return {'success': False, 'message': 'probably timed out'}
 
+	if not isinstance(apiGot, dict):
+		apiGot = {'data': apiGot}
+
 	if apiGot.get('success') == True:
 
 		cachedRequests[apiUrl] = {"time": curTime, "data": apiGot}
@@ -968,7 +971,7 @@ async def commandEvents(curMessage):
 		return
 
 	embedStr = ""
-	for curEvent in apiGot:
+	for curEvent in apiGot['data']:
 		if len(embedStr) > 512:
 			break
 		curEventName = curEvent["event"]

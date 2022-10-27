@@ -232,7 +232,7 @@ def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 
 			for curCachedRequestUrl, curCachedRequestData in cachedRequests.items(): # probably a cleaner way to do this
 
-				if curCachedRequestData.get('time', 0) < curTime - maxCacheMinutes:
+				if curCachedRequestData.get('time', 0) < curTime - maxCacheMinutes * 60:
 
 					toPop.append(curCachedRequestUrl)
 

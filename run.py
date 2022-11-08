@@ -1096,7 +1096,7 @@ async def commandTradeLimits(curMessage):
 	playerTrades = getVal(apiGot, ['player', 'stats', 'Pit', 'profile', 'trade_timestamps'])
 
 	curTime = time.time()
-	playerTrades = list(filter(lambda x: x > (curTime - 3600 * 18) * 1000, playerTrades)) 
+	playerTrades = list(filter(lambda x: x > (curTime - 3600 * 24) * 1000, playerTrades)) 
 
 	if playerTrades == None or len(playerTrades) == 0:
 		await curMessage.reply('No trade limits found. 0/25')
@@ -1126,12 +1126,12 @@ async def commandTradeLimits(curMessage):
 				totalGoldTransactionAmount -= curGoldTransaction['amount']
 				break
 
-		embedStr += f"""`{tradeLimitsStr: <16}` `{str(totalGoldTransactionAmount) + 'g': <16}` <t:{int((curTradeTime / 1000) + 3600 * 18)}:R>\n"""
+		embedStr += f"""`{tradeLimitsStr: <16}` `{str(totalGoldTransactionAmount) + 'g': <16}` <t:{int((curTradeTime / 1000) + 3600 * 24)}:R>\n"""
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Trade limits for {playerUsername}", value = embedStr)
 
-	await curMessage.reply('', embed = replyEmbed)
+	await curMessage.reply('Disclaimer: may not be accurate', embed = replyEmbed)
 
 async def commandContractLimits(curMessage):
 
@@ -1216,7 +1216,7 @@ async def commandContractLimits(curMessage):
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Contract limits for {playerUsername}", value = embedStr)
 
-	await curMessage.reply('', embed = replyEmbed)
+	await curMessage.reply('Disclaimer: may not be accurate', embed = replyEmbed)
 
 async def commandsDupeCheck(curMessage):
 	curMessageSplit = curMessage.content.lower().split()

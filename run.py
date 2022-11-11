@@ -1571,6 +1571,17 @@ async def commandServerLeaderboard(curMessage):
 
 	await curMessage.reply('', embed = replyEmbed)
 
+async def commandUpdateMe(curMessage):
+
+	userDoc = discordsCol.find_one({'_id': curMessage.author.id})
+
+	if userDoc == None:
+		await curMessage.reply('No data found.')
+
+	discordsCol.update_one({'_id': curMessage.author.id}, {'$unset': {'gamedata.discordaccountage': True}})
+
+	await curMessage.reply('Updating, please wait a few seconds.')
+
 # other
 
 def isValidLbType(curLbType):
@@ -2043,6 +2054,10 @@ commandsList["server"] = commandServerLeaderboard
 commandsList["serverlb"] = commandServerLeaderboard
 commandsList["serverleaderboard"] = commandServerLeaderboard
 commandsList["serverleaderboards"] = commandServerLeaderboard
+
+commandsList["um"] = commandUpdateMe
+commandsList["update"] = commandUpdateMe
+commandsList["updateme"] = commandUpdateMe
 
 intents = discord.Intents.default()
 intents.message_content = True

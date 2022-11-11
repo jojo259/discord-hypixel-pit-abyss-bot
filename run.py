@@ -1578,7 +1578,7 @@ async def commandUpdateMe(curMessage):
 	if userDoc == None:
 		await curMessage.reply('No data found.')
 
-	discordsCol.update_one({'_id': curMessage.author.id}, {'$unset': {'gamedata': True}})
+	discordsCol.update_one({'_id': curMessage.author.id}, {'$unset': {'checkat': True}})
 
 	await curMessage.reply('Updating, please wait a few seconds.')
 

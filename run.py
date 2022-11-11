@@ -1673,6 +1673,16 @@ async def updateLeaderboardPlayer():
 
 		setVals['gamedata.' + curLbName] = curLbVal
 
+	# add discord account creation to lb
+
+	try: # bc i dont know if this will always work
+
+		discordUser = await botClass.fetch_user(userDiscordId)
+		setVals['gamedata.discordaccountage'] = discordUser.created_at.timestamp()
+
+	except Exception as e:
+		print(f'error {e}')
+
 	# set vals
 
 	discordsCol.update_one({'_id': userDiscordId}, {'$set': setVals})

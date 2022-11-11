@@ -1683,7 +1683,8 @@ async def updateLeaderboardPlayer():
 	try: # bc i dont know if this will always work
 
 		discordUser = await botClass.fetch_user(userDiscordId)
-		setVals['gamedata.discordaccountage'] = discordUser.created_at.timestamp()
+		accountCreatedEpoch = discordUser.created_at.timestamp()
+		setVals['gamedata.discordaccountage'] = (curTime - accountCreatedEpoch) / 86400
 
 	except Exception as e:
 		print(f'error {e}')

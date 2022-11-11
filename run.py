@@ -1527,7 +1527,7 @@ async def commandServerLeaderboard(curMessage):
 
 	curLbType = curMessageSplit[1]
 
-	if curLbType not in leaderboardTypes.keys():
+	if curLbType not in leaderboardTypes.keys() and curLbType != 'discordaccountage':
 		await curMessage.reply(f"Leaderboard type not found. Available types: `{', '.join(leaderboardTypes.keys())}`")
 		return
 

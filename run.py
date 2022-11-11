@@ -1457,7 +1457,7 @@ async def commandLeaderboards(curMessage):
 
 	curLbType = curMessageSplit[1]
 
-	if curLbType not in leaderboardTypes.keys():
+	if not isValidLbType(curLbType):
 		await curMessage.reply(f"Leaderboard type not found. Available types: `{', '.join(leaderboardTypes.keys())}`")
 		return
 
@@ -1527,7 +1527,7 @@ async def commandServerLeaderboard(curMessage):
 
 	curLbType = curMessageSplit[1]
 
-	if curLbType not in leaderboardTypes.keys() and curLbType != 'discordaccountage':
+	if not isValidLbType(curLbType):
 		await curMessage.reply(f"Leaderboard type not found. Available types: `{', '.join(leaderboardTypes.keys())}`")
 		return
 
@@ -1572,6 +1572,11 @@ async def commandServerLeaderboard(curMessage):
 	await curMessage.reply('', embed = replyEmbed)
 
 # other
+
+def isValidLbType(curLbType):
+	if curLbType in leaderboardTypes.keys() or curLbType == 'discordaccountage':
+		return True
+	return False
 
 def getCommandFunc(commandStr):
 	if commandStr in commandsList:

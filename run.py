@@ -1944,6 +1944,8 @@ class botClass(discord.Client):
 
 			print(f'command errored: {e}')
 
+			await curMessage.reply('Command errored.')
+
 		# log command
 
 		if curAuthor.id != jojoDiscordId: # i don't need logs for my own commands

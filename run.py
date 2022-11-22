@@ -1704,6 +1704,10 @@ async def updateLeaderboardPlayer():
 	except Exception as e:
 		print(f'error {e}')
 
+	# add username to setvals to update it
+
+	setVals['username'] = playerApiGot.get('data', {}).get('name')
+
 	# set vals
 
 	discordsCol.update_one({'_id': userDiscordId}, {'$set': setVals})

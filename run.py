@@ -1509,6 +1509,7 @@ async def commandLeaderboards(curMessage):
 			curGuildName = await getGuildName(curGuildId)
 		except:
 			print(f'failed to get guild {curGuildId}') # probably has a guild in the data that the bot is no longer part of so permissions error
+			continue
 
 		lbString += f"`{str(atGuild + 1)[:3]: <3}` `{curGuildName[:32]: <32}` `{prettyNumber(curGuildTotal): <8}`\n"
 

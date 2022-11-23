@@ -1791,7 +1791,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	`.bs name tinykloonfish`
 	"""
 
-	helpMessages[commandsDupeCheck] = """
+	helpMessages[commandDupeCheck] = """
 	`.dc username ench1 [ench2] [ench3] [lives X] [page X]`
 	Check if an item appears to be duped using data from Pit Panda and Jojo Boats.
 
@@ -1988,6 +1988,9 @@ commandsList["pastowners"] = commandOwnerHistory
 commandsList["ownerhistory"] = commandOwnerHistory
 commandsList["ownershistory"] = commandOwnerHistory
 
+# prittier...
+#commandsList[commandOwnerHistory] = ['oh', 'owner', 'owners', etc]
+
 commandsList["pl"] = commandPlayerStatus
 commandsList["player"] = commandPlayerStatus
 commandsList["status"] = commandPlayerStatus
@@ -2042,11 +2045,11 @@ commandsList["contractslims"] = commandContractLimits
 commandsList["contractlimits"] = commandContractLimits
 commandsList["contractslimits"] = commandContractLimits
 
-commandsList["dc"] = commandsDupeCheck
-commandsList["dupe"] = commandsDupeCheck
-commandsList["duped"] = commandsDupeCheck
-commandsList["checkdupe"] = commandsDupeCheck
-commandsList["dupecheck"] = commandsDupeCheck
+commandsList["dc"] = commandDupeCheck
+commandsList["dupe"] = commandDupeCheck
+commandsList["duped"] = commandDupeCheck
+commandsList["checkdupe"] = commandDupeCheck
+commandsList["dupecheck"] = commandDupeCheck
 
 commandsList["ve"] = commandVerify
 commandsList["verify"] = commandVerify

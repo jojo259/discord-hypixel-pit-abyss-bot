@@ -35,6 +35,7 @@ botToken = os.environ['bottoken']
 pitPandaApiKey = os.environ['pitpandaapikey']
 webHookUrl = os.environ['webhookurl']
 hypixelApiKey = os.environ['hypixelapikey']
+jojoKey = os.environ['jojoboatsjojokey']
 
 jojoDiscordId = 121692189230104577
 
@@ -1218,7 +1219,7 @@ async def commandContractLimits(curMessage):
 
 	await curMessage.reply('Disclaimer: may not be accurate', embed = replyEmbed)
 
-async def commandsDupeCheck(curMessage):
+async def commandDupeCheck(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) < 2:
@@ -1308,7 +1309,7 @@ async def commandsDupeCheck(curMessage):
 
 	# check jojo.boats
 
-	boatsNonceApiUrl = f"http://www.jojo.boats/api/items/nonce={foundItemNonce}"
+	boatsNonceApiUrl = f"http://www.jojo.boats/api/items/nonce={foundItemNonce},key={jojoKey}"
 	try:
 		boatsNonceApiGot = requestsGet(boatsNonceApiUrl, cacheMinutes = 1)
 	except:

@@ -9,6 +9,7 @@ import time
 import os
 import random
 import collections
+import urllib
 
 import dotenv
 dotenv.load_dotenv()
@@ -1587,6 +1588,45 @@ async def commandUpdateMe(curMessage):
 
 	await curMessage.reply('Updating, please wait a few seconds.')
 
+async def commandGenerateItem(curMessage):
+
+	lineDelimiter = ','
+
+	curMessageRaw = ' '.join(curMessage.content.split()[1:])
+
+	apiText = ''
+
+	colorsWrap = '[]'
+
+	colorsList = {
+		'black': '0',
+		'darkblue': '1',
+		'darkgreen': '2',
+		'darkaqua': '3',
+		'darkred': '4',
+		'darkpurple': '5',
+		'gold': '6',
+		'gray': '7',
+		'darkgray': '8',
+		'blue': '9',
+		'green': 'a',
+		'aqua': 'b',
+		'red': 'c',
+		'purple':'d',
+		'yellow': 'e',
+		'white': 'f',
+	}
+
+	for curColorName, curColorCode in colorsList.items():
+		print(f'{colorsWrap[0]}{curColorName}{colorsWrap[1]}')
+		curMessageRaw = curMessageRaw.replace(f'{colorsWrap[0]}{curColorName}{colorsWrap[1]}', '§' + curColorCode)
+
+	curMessageRaw = curMessageRaw.replace(',', ',,,')
+
+	apiUrl = f'http://www.jojo.boats/api/itemimage?text={urllib.parse.quote_plus(curMessageRaw)}'
+
+	await curMessage.reply(apiUrl)
+
 # other
 
 def isValidLbType(curLbType):
@@ -2070,6 +2110,12 @@ commandsList["serverleaderboards"] = commandServerLeaderboard
 commandsList["um"] = commandUpdateMe
 commandsList["update"] = commandUpdateMe
 commandsList["updateme"] = commandUpdateMe
+
+commandsList["gi"] = commandGenerateItem
+commandsList["gen"] = commandGenerateItem
+commandsList["genitem"] = commandGenerateItem
+commandsList["generate"] = commandGenerateItem
+commandsList["generateitem"] = commandGenerateItem
 
 intents = discord.Intents.default()
 intents.message_content = True

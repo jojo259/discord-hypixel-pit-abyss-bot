@@ -1623,7 +1623,7 @@ async def commandGenerateItem(curMessage):
 
 	curMessageRaw = curMessageRaw.replace(',', ',,,')
 
-	apiUrl = f'http://www.jojo.boats/api/itemimage?text={urllib.parse.quote_plus(curMessageRaw)}'
+	apiUrl = f'<http://www.jojo.boats/api/itemimage?text={urllib.parse.quote_plus(curMessageRaw)}>'
 
 	await curMessage.reply(apiUrl)
 

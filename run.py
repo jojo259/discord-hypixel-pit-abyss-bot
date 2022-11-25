@@ -47,7 +47,7 @@ def loadEnchNames():
 
 	print('getting ench names')
 
-	enchNamesUrl = "http://www.jojo.boats/api/enchnames"
+	enchNamesUrl = "https://jojo.boats/api/enchnames"
 
 	try:
 
@@ -1310,7 +1310,7 @@ async def commandDupeCheck(curMessage):
 
 	# check jojo.boats
 
-	boatsNonceApiUrl = f"http://www.jojo.boats/api/items/nonce={foundItemNonce},key={jojoKey}"
+	boatsNonceApiUrl = f"https://jojo.boats/api/items/nonce={foundItemNonce},key={jojoKey}"
 	try:
 		boatsNonceApiGot = requestsGet(boatsNonceApiUrl, cacheMinutes = 1)
 	except:
@@ -1623,7 +1623,7 @@ async def commandGenerateItem(curMessage):
 
 	curMessageRaw = curMessageRaw.replace(',', ',,,')
 
-	apiUrl = f'http://www.jojo.boats/api/itemimage?text={urllib.parse.quote_plus(curMessageRaw)}'
+	apiUrl = f'https://jojo.boats/api/itemimage?text={urllib.parse.quote_plus(curMessageRaw)}'
 
 	await curMessage.reply(apiUrl)
 
@@ -1761,7 +1761,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	helpMessages = {}
 
 	helpMessages[commandKos] = """
-	KOS system has been removed, use http://www.jojo.boats/kos
+	KOS system has been removed, use https://jojo.boats/kos
 	If you need help feel free to DM Jojo.
 	"""
 

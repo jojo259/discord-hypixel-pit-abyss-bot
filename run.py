@@ -10,6 +10,7 @@ import os
 import random
 import collections
 import urllib
+import json
 
 import dotenv
 dotenv.load_dotenv()
@@ -669,9 +670,11 @@ async def commandOwnerHistory(curMessage):
 		return
 
 	embedStr = ""
+	lastOwnerUsername = 'error'
 	for ownerData in itemOwnersSlice:
 		ownerUuid = ownerData["uuid"]
 		ownerUsername = getUsernameFromUuid(ownerUuid)
+		lastOwnerUsername = ownerUsername
 
 		ownerTime = parseTimestamp(ownerData["time"])
 
@@ -679,6 +682,19 @@ async def commandOwnerHistory(curMessage):
 
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f'Owners: (page {atPage + 1}/{totalPages})', value = embedStr[:1024])
+
+	try: # this part is not critical and i dont trust it
+		# add owner data to lore
+		itemCurLore = foundItem.get('item', {}).get('desc', [])
+		itemCurLore.insert(0, f'Last seen: {prettyTimeStr(parseTimestamp(realItem.get("lastseen", "notime")))}')
+		itemCurLore.insert(0, f'Owner: {lastOwnerUsername}')
+		foundItem['item']['lore'] = itemCurLore
+
+		itemImageUrl = 'https://jojo.boats/api/itemimage?scale=6&itemjson=' + urllib.parse.quote_plus(json.dumps(foundItem.get('item', {})))
+
+		replyEmbed.set_image(url = itemImageUrl)
+	except Exception as e:
+		print(f'adding owner data to lore failed: {e}')
 
 	await curMessage.reply(itemStr(foundItem), embed = replyEmbed)
 
@@ -1618,7 +1634,6 @@ async def commandGenerateItem(curMessage):
 	}
 
 	for curColorName, curColorCode in colorsList.items():
-		print(f'{colorsWrap[0]}{curColorName}{colorsWrap[1]}')
 		curMessageRaw = curMessageRaw.replace(f'{colorsWrap[0]}{curColorName}{colorsWrap[1]}', '§' + curColorCode)
 
 	curMessageRaw = curMessageRaw.replace(',', ',,,')
@@ -1917,6 +1932,40 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	replyEmbed.add_field(name = f"Command", value = helpStr[:1024])
 
 	await curMessage.reply('', embed = replyEmbed)
+
+def prettyTimeStr(theTime):
+	curTime = time.time()
+
+	timeDiff = abs(theTime - curTime)
+
+	timeWord = ''
+
+	if timeDiff < 1:
+		return 'right now'
+	elif timeDiff < 60:
+		timeWord = 'second'
+	elif timeDiff < 3600:
+		timeWord = 'minute'
+		timeDiff /= 60
+	elif timeDiff < 86400:
+		timeWord = 'hour'
+		timeDiff /= 3600
+	elif timeDiff < 2678400:
+		timeWord = 'day'
+		timeDiff /= 86400
+	elif timeDiff < 31536000:
+		timeWord = 'month'
+		timeDiff /= 2678400
+
+	timeDiff = math.floor(timeDiff)
+
+	if timeDiff > 1:
+		timeWord += 's'
+
+	if theTime > curTime:
+		return f'in {timeDiff} {timeWord}'
+	else:
+		return f'{timeDiff} {timeWord} ago'
 
 # bot init stuff
 

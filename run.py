@@ -828,7 +828,7 @@ async def commandItemSearch(curMessage):
 	itemsListSlice = itemsList[max(0, atPage * itemsPerPage):atPage * itemsPerPage + itemsPerPage]
 
 	if len(itemsList) == 0:
-		await curMessage.reply('No items found.')
+		await curMessage.reply("No items found. Potential cause: Pit Panda cannot track rages, darks, etc., only regular mystics.")
 		return
 
 	if atPage < 0:

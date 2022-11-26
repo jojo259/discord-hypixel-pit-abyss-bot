@@ -15,6 +15,8 @@ import json
 import dotenv
 dotenv.load_dotenv()
 
+import msgs
+
 debugMode = False
 if 'debugmode' in os.environ:
 	debugMode = True
@@ -618,7 +620,7 @@ async def commandOwnerHistory(curMessage):
 		itemsListLen = len(itemsList)
 
 	if itemsListLen == 0:
-		await curMessage.reply("No items found.")
+		await curMessage.reply(msgs.noItemsFound)
 		return
 	elif itemsListLen > 1:
 		replyStr = "Too many items found, be more specific."
@@ -828,7 +830,7 @@ async def commandItemSearch(curMessage):
 	itemsListSlice = itemsList[max(0, atPage * itemsPerPage):atPage * itemsPerPage + itemsPerPage]
 
 	if len(itemsList) == 0:
-		await curMessage.reply("No items found. Potential cause: Pit Panda cannot track rages, darks, etc., only regular mystics.")
+		await curMessage.reply(msgs.noItemsFound)
 		return
 
 	if atPage < 0:
@@ -880,7 +882,7 @@ async def commandBoatsSearch(curMessage):
 	itemsListSlice = itemsList[max(0, atPage * itemsPerPage):atPage * itemsPerPage + itemsPerPage]
 
 	if len(itemsList) == 0:
-		await curMessage.reply('No items found.')
+		await curMessage.reply(msgs.noItemsFound)
 		return
 
 	if atPage < 0:
@@ -1291,7 +1293,7 @@ async def commandDupeCheck(curMessage):
 		searchItemsListLen = len(searchItemsList)
 
 	if searchItemsListLen == 0:
-		await curMessage.reply("No items found.")
+		await curMessage.reply(msgs.noItemsFound)
 		return
 	elif searchItemsListLen > 1:
 		replyStr = "Too many items found, be more specific."

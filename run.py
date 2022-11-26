@@ -690,7 +690,7 @@ async def commandOwnerHistory(curMessage):
 		itemCurLore.insert(0, f'Owner: {lastOwnerUsername}')
 		foundItem['item']['lore'] = itemCurLore
 
-		itemImageUrl = 'https://jojo.boats/api/itemimage?scale=6&itemjson=' + urllib.parse.quote_plus(json.dumps(foundItem.get('item', {})))
+		itemImageUrl = getItemImageApiUrl(foundItem.get('item', {}))
 
 		replyEmbed.set_image(url = itemImageUrl)
 	except Exception as e:
@@ -1348,6 +1348,9 @@ async def commandDupeCheck(curMessage):
 	replyEmbed = discord.Embed(title = "", color = discord.Color.red())
 	replyEmbed.add_field(name = f"Dupe check", value = embedStr)
 
+	itemImageUrl = getItemImageApiUrl(foundItem.get('item', {}))
+	replyEmbed.set_image(url = itemImageUrl)
+
 	await curMessage.reply(itemStr(foundItem) + "\nNeither of these numbers is guaranteed to be accurate.\nTo see the items that were found search with `.is nonce <nonce>` and `.bs nonce <nonce>`", embed = replyEmbed)
 
 async def commandVerify(curMessage):
@@ -1643,6 +1646,9 @@ async def commandGenerateItem(curMessage):
 	await curMessage.reply(apiUrl)
 
 # other
+
+def getItemImageApiUrl(forItem):
+	return 'https://jojo.boats/api/itemimage?scale=6&itemjson=' + urllib.parse.quote_plus(json.dumps(forItem))
 
 def isValidLbType(curLbType):
 	if curLbType in leaderboardTypes.keys() or curLbType == 'discordaccountage':

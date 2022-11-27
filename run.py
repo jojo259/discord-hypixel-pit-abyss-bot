@@ -50,7 +50,7 @@ def loadEnchNames():
 
 	print('getting ench names')
 
-	enchNamesUrl = "https://jojo.boats/api/enchnames"
+	enchNamesUrl = "https://www.jojo.boats/api/enchnames"
 
 	try:
 
@@ -1328,7 +1328,7 @@ async def commandDupeCheck(curMessage):
 
 	# check jojo.boats
 
-	boatsNonceApiUrl = f"https://jojo.boats/api/items/nonce={foundItemNonce},key={jojoKey}"
+	boatsNonceApiUrl = f"https://www.jojo.boats/api/items/nonce={foundItemNonce},key={jojoKey}"
 	try:
 		boatsNonceApiGot = requestsGet(boatsNonceApiUrl, cacheMinutes = 1)
 	except:
@@ -1643,14 +1643,14 @@ async def commandGenerateItem(curMessage):
 
 	curMessageRaw = curMessageRaw.replace(',', ',,,')
 
-	apiUrl = f'https://jojo.boats/api/itemimage?text={urllib.parse.quote_plus(curMessageRaw)}'
+	apiUrl = f'https://www.jojo.boats/api/itemimage?text={urllib.parse.quote_plus(curMessageRaw)}'
 
 	await curMessage.reply(apiUrl)
 
 # other
 
 def getItemImageApiUrl(forItem):
-	return 'https://jojo.boats/api/itemimage?scale=6&itemjson=' + urllib.parse.quote_plus(json.dumps(forItem))
+	return 'https://www.jojo.boats/api/itemimage?scale=6&itemjson=' + urllib.parse.quote_plus(json.dumps(forItem))
 
 def isValidLbType(curLbType):
 	if curLbType in leaderboardTypes.keys() or curLbType == 'discordaccountage':
@@ -1784,7 +1784,7 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	helpMessages = {}
 
 	helpMessages[commandKos] = """
-	KOS system has been removed, use https://jojo.boats/kos
+	KOS system has been removed, use https://www.jojo.boats/kos
 	If you need help feel free to DM Jojo.
 	"""
 

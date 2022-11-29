@@ -690,7 +690,7 @@ async def commandOwnerHistory(curMessage):
 		itemCurLore = foundItem.get('item', {}).get('desc', [])
 		itemCurLore.insert(0, f'Last seen: {prettyTimeStr(parseTimestamp(realItem.get("lastseen", "notime")))}')
 		itemCurLore.insert(0, f'Owner: {lastOwnerUsername}')
-		foundItem['item']['lore'] = itemCurLore
+		foundItem['item']['desc'] = itemCurLore
 
 		itemImageUrl = getItemImageApiUrl(foundItem.get('item', {}))
 

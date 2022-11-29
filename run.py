@@ -865,7 +865,7 @@ async def commandBoatsSearch(curMessage):
 
 	urlParamsStr = ",".join(searchParams)
 
-	searchApiUrl = f"https://www.jojo.boats.com/api/items/{urlParamsStr}"
+	searchApiUrl = f"https://www.jojo.boats/api/items/{urlParamsStr}"
 	try:
 		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:

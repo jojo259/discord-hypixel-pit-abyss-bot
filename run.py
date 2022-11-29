@@ -1650,7 +1650,7 @@ async def commandGenerateItem(curMessage):
 # other
 
 def getItemImageApiUrl(forItem):
-	return 'https://www.jojo.boats/api/itemimage?scale=6&itemjson=' + urllib.parse.quote_plus(json.dumps(forItem))
+	return 'https://www.jojo.boats/api/itemimage?itemjson=' + urllib.parse.quote_plus(json.dumps(forItem))
 
 def isValidLbType(curLbType):
 	if curLbType in leaderboardTypes.keys() or curLbType == 'discordaccountage':

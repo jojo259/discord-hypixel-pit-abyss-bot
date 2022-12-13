@@ -11,6 +11,7 @@ import random
 import collections
 import urllib
 import json
+import copy
 
 import dotenv
 dotenv.load_dotenv()
@@ -213,7 +214,7 @@ def requestsGet(apiUrl, timeout = 30, cacheMinutes = 0):
 	if apiUrl in cachedRequests:
 		if cachedRequests[apiUrl]["time"] > curTime - cacheMinutes * 60:
 			print("	returning cached request")
-			return cachedRequests[apiUrl]["data"]
+			return copy.deepcopy(cachedRequests[apiUrl]["data"])
 		else:
 			cachedRequests.pop(apiUrl)
 
@@ -610,7 +611,7 @@ async def commandOwnerHistory(curMessage):
 
 		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
 		try:
-			searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
+			searchApiGot = copy.deepcopy(requestsGet(searchApiUrl, cacheMinutes = 1)) # i have no idea why copy.deepcopy is needed here too
 		except:
 			print(f'	failed to get api {searchApiUrl}')
 			await curMessage.reply("API failed or timed out.")

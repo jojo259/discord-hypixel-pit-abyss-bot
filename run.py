@@ -1616,6 +1616,9 @@ async def commandGenerateItem(curMessage):
 
 	curMessageRaw = ' '.join(curMessage.content.split()[1:])
 
+	if len(curMessageRaw) == 0:
+		return
+
 	apiText = ''
 
 	colorsWrap = '[]'

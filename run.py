@@ -1275,7 +1275,7 @@ async def commandDupeCheck(curMessage):
 	curMessageSplit = curMessage.content.lower().split()
 
 	if len(curMessageSplit) < 2:
-		await postCommandHelpMessage(curMessage, commandOwnerHistory)
+		await postCommandHelpMessage(curMessage, commandDupeCheck)
 		return
 
 	ownerUsername = curMessageSplit[1].lower()

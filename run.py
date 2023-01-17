@@ -564,38 +564,6 @@ async def commandHelp(curMessage):
 	else:
 		await postCommandHelpMessage(curMessage, commandHelp)
 
-async def commandSearchMessages(curMessage):
-	curMessageSplit = curMessage.content.lower().split()
-
-	if len(curMessageSplit) < 2:
-		await postCommandHelpMessage(curMessage, commandSearchMessages)
-		return
-
-	apiUrl = f'https://www.jojo.boats/api/{jojoKey}/notablemessages?search={"%20".join(curMessageSplit[1:])}&maxhours=4'
-	try:
-		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
-	except:
-		print(f'	failed to get api {apiUrl}')
-		await curMessage.reply("API failed or timed out.")
-		return
-
-	messagesFound = apiGot.get('found', [])[:12]
-
-	if len(messagesFound) == 0:
-		await curMessage.reply('None found in last 4 hours.')
-		return
-
-	replyStr = ''
-	for messageData in messagesFound:
-
-		messageUsername = messageData.get('username', 'error')
-		messageContent = messageData.get('message', 'error')
-		messageTime = messageData.get('time', '0')
-
-		replyStr += f"""`{messageUsername + ':':17} {messageContent}` <t:{messageTime}:R>\n"""
-
-	await curMessage.reply(replyStr[:2000])
-
 async def commandOwnerHistory(curMessage):
 	ownersPerPage = 16
 
@@ -2210,11 +2178,6 @@ commandsList["genitem"] = commandGenerateItem
 commandsList["generate"] = commandGenerateItem
 commandsList["generateitem"] = commandGenerateItem
 
-commandsList["sm"] = commandSearchMessages
-commandsList["search"] = commandSearchMessages
-commandsList["messages"] = commandSearchMessages
-commandsList["searchmessage"] = commandSearchMessages
-commandsList["searchmessages"] = commandSearchMessages
 
 intents = discord.Intents.default()
 intents.message_content = True

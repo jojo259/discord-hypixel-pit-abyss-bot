@@ -1651,6 +1651,29 @@ async def commandGenerateItem(curMessage):
 
 	await curMessage.reply(apiUrl)
 
+async def commandFriendsPath(curMessage):
+
+	curMessageSplit = curMessage.content.lower().split()
+
+	if len(curMessageSplit) != 3:
+		await postCommandHelpMessage(curMessage, commandFriendsPath)
+		return
+
+	apiUrl = f"https://www.jojo.boats/api/friendspath/{curMessageSplit[1]}/{curMessageSplit[2]}"
+	try:
+		apiGot = requestsGet(apiUrl, timeout = 30, cacheMinutes = 1)
+	except:
+		print(f'	failed to get api {apiUrl}')
+		await curMessage.reply('API failed, probably timed out or errored.')
+		return
+
+	usernamesList = list(map(lambda x: getUsernameFromUuid(x), apiGot['path']))
+	usernamesList = list(map(lambda x: f'`{x}`', usernamesList))
+
+	replyStr = ' --> '.join(usernamesList)
+
+	await curMessage.reply(replyStr)
+
 # other
 
 def getItemImageApiUrl(forItem):
@@ -1894,6 +1917,11 @@ async def postCommandHelpMessage(curMessage, helpCommandFunc):
 	helpMessages[commandUnverify] = """
 	`.unverify`
 	Remove your current Discord-Hypixel link.
+	"""
+
+	helpMessages[commandFriendsPath] = """
+	`.fp username1 username2`
+	Find a path between two Hypixel players through their friends lists.
 	"""
 
 	# kinda too long
@@ -2178,6 +2206,9 @@ commandsList["genitem"] = commandGenerateItem
 commandsList["generate"] = commandGenerateItem
 commandsList["generateitem"] = commandGenerateItem
 
+commandsList["fp"] = commandFriendsPath
+commandsList["path"] = commandFriendsPath
+commandsList["friendspath"] = commandFriendsPath
 
 intents = discord.Intents.default()
 intents.message_content = True

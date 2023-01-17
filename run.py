@@ -1667,6 +1667,9 @@ async def commandFriendsPath(curMessage):
 		await curMessage.reply('API failed, probably timed out or errored.')
 		return
 
+	if apiGot.get('path') == None:
+		await curMessage.reply('No path found or errored.')
+
 	usernamesList = list(map(lambda x: getUsernameFromUuid(x), apiGot['path']))
 	usernamesList = list(map(lambda x: f'`{x}`', usernamesList))
 

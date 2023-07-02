@@ -1448,7 +1448,7 @@ async def commandVerify(curMessage):
 
 	apiDiscord = getVal(playerApiGot, ['data', 'doc', 'discord'])
 
-	messageDiscord = curMessage.author.name + '#' + curMessage.author.discriminator
+	messageDiscord = curMessage.author.name
 
 	if apiDiscord != messageDiscord:
 		await curMessage.reply("Hypixel Discord doesn't match your Discord.")

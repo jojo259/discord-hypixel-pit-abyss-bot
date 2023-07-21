@@ -1446,7 +1446,7 @@ async def commandVerify(curMessage):
 
 	# check if discord matches
 
-	apiDiscord = getVal(playerApiGot, ['data', 'doc', 'discord'])
+	apiDiscord = getVal(playerApiGot, ['data', 'doc', 'discord']).lower()
 
 	messageDiscord = curMessage.author.name
 

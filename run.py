@@ -590,7 +590,7 @@ async def commandOwnerHistory(curMessage):
 
 	urlParamsStr = ",".join(searchParams)
 
-	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
+	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}"
 	try:
 		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:
@@ -609,7 +609,7 @@ async def commandOwnerHistory(curMessage):
 
 		urlParamsStr = ",".join(searchParams)
 
-		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
+		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}"
 		try:
 			searchApiGot = copy.deepcopy(requestsGet(searchApiUrl, cacheMinutes = 1)) # i have no idea why copy.deepcopy is needed here too
 		except:
@@ -641,7 +641,7 @@ async def commandOwnerHistory(curMessage):
 	foundItem = itemsList[0]
 	foundItemId = foundItem["id"]
 
-	idApiUrl = f"https://pitpanda.rocks/api/item/{foundItemId}?key={pitPandaApiKey}"
+	idApiUrl = f"https://pitpanda.rocks/api/item/{foundItemId}"
 	try:
 		idApiGot = requestsGet(idApiUrl, cacheMinutes = 1)
 	except:
@@ -814,7 +814,7 @@ async def commandItemSearch(curMessage):
 
 	urlParamsStr = ",".join(searchParams)
 
-	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
+	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}"
 	try:
 		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:
@@ -925,7 +925,7 @@ async def commandMutuals(curMessage):
 	else:
 		secondPlayerUuid = authorDoc['uuid']
 
-	firstApiUrl = f"https://pitpanda.rocks/api/friends/{firstPlayerUuid}?key={pitPandaApiKey}"
+	firstApiUrl = f"https://pitpanda.rocks/api/friends/{firstPlayerUuid}"
 	try:
 		firstApiGot = requestsGet(firstApiUrl, cacheMinutes = 1)
 	except:
@@ -937,7 +937,7 @@ async def commandMutuals(curMessage):
 		await curMessage.reply("API failed, are you sure those players exist?")
 		return
 
-	secondApiUrl = f"https://pitpanda.rocks/api/friends/{secondPlayerUuid}?key={pitPandaApiKey}"
+	secondApiUrl = f"https://pitpanda.rocks/api/friends/{secondPlayerUuid}"
 	try:
 		secondApiGot = requestsGet(secondApiUrl, cacheMinutes = 1)
 	except:
@@ -1021,7 +1021,7 @@ async def commandKingsQuestCalc(curMessage):
 	else:
 		targetIdentity = curMessageSplit[1]
 
-	apiUrl = f"https://pitpanda.rocks/api/players/{targetIdentity}?key={pitPandaApiKey}"
+	apiUrl = f"https://pitpanda.rocks/api/players/{targetIdentity}"
 	try:
 		apiGot = requestsGet(apiUrl, cacheMinutes = 1)
 	except:
@@ -1263,7 +1263,7 @@ async def commandDupeCheck(curMessage):
 
 	urlParamsStr = ",".join(searchParams)
 
-	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
+	searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}"
 	try:
 		searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 	except:
@@ -1282,7 +1282,7 @@ async def commandDupeCheck(curMessage):
 
 		urlParamsStr = ",".join(searchParams)
 
-		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}?key={pitPandaApiKey}"
+		searchApiUrl = f"https://pitpanda.rocks/api/itemsearch/{urlParamsStr}"
 		try:
 			searchApiGot = requestsGet(searchApiUrl, cacheMinutes = 1)
 		except:
@@ -1316,7 +1316,7 @@ async def commandDupeCheck(curMessage):
 
 	# check panda
 
-	pandaNonceApiUrl = f"https://pitpanda.rocks/api/itemsearch/nonce{foundItemNonce}?key={pitPandaApiKey}"
+	pandaNonceApiUrl = f"https://pitpanda.rocks/api/itemsearch/nonce{foundItemNonce}"
 	try:
 		pandaNonceApiGot = requestsGet(pandaNonceApiUrl, cacheMinutes = 1)
 	except:
@@ -1398,7 +1398,7 @@ async def commandVerify(curMessage):
 
 	playerUsername = curMessageSplit[1]
 
-	playerApiUrl = f"https://pitpanda.rocks/api/players/{playerUsername}?key={pitPandaApiKey}"
+	playerApiUrl = f"https://pitpanda.rocks/api/players/{playerUsername}"
 	try:
 		playerApiGot = requestsGet(playerApiUrl, cacheMinutes = 1)
 	except:
@@ -1745,7 +1745,7 @@ async def updateLeaderboardPlayer():
 
 	# get data
 
-	playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}?key={pitPandaApiKey}"
+	playerApiUrl = f"https://pitpanda.rocks/api/players/{userUuid}"
 	try:
 		playerApiGot = requestsGet(playerApiUrl, timeout = 3, cacheMinutes = botClass.minPlayerCheckIntervalMinutes - 1) # -1 in case of exact timings issue
 	except:

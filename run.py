@@ -2038,9 +2038,9 @@ class botClass(discord.Client):
 
 		await theBot.change_presence(activity = discord.Game(".help"))
 
-		if not debugMode:
-			theBot.updateLeaderboardPlayerTask.start()
-			theBot.updateLeaderboardGuildsTask.start()
+		#if not debugMode:
+			#theBot.updateLeaderboardPlayerTask.start()
+			#theBot.updateLeaderboardGuildsTask.start()
 
 	@tasks.loop(minutes = 10)
 	async def updateLeaderboardGuildsTask(theBot):
